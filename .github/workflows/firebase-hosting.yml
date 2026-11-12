@@ -18,6 +18,23 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Fetch NoWord web release
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: AllAppsNora/noword-site
+          ref: 919180c81d8e28fa04dd5e227de848b60b07fd90
+          path: noword-source
+          persist-credentials: false
+      - name: Set NoWord canonical manifest URL
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('noword-source/app/manifest.webmanifest')
+          data = json.loads(p.read_text())
+          data['related_applications'] = [{'platform': 'webapp', 'url': 'https://noword.web.app/app/manifest.webmanifest'}]
+          p.write_text(json.dumps(data, ensure_ascii=False, indent=2))
+          PY
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
