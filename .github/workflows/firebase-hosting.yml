@@ -1,0 +1,33 @@
+name: Firebase Hosting
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: firebase-n-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: test -f portal/index.html && test -f portal/assets/nora-apps.png
+      - name: Authenticate to Google Cloud
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.FIREBASE_DEPLOY_ENABLED == 'true'
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      - name: Deploy Hosting
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.FIREBASE_DEPLOY_ENABLED == 'true'
+        run: npx --yes firebase-tools@15.36.0 deploy --config firebase-nora.json --project k1nday --only hosting --non-interactive
