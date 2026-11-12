@@ -5,6 +5,17 @@
       "public": "portal",
       "ignore": [
         "**/.*"
+      ],
+      "headers": [
+        {
+          "source": "/yz101/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        }
       ]
     },
     {
