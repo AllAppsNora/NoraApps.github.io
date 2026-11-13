@@ -25,8 +25,11 @@ function render(){
  const u=state.profile,progress=new Set(state.progress.map(x=>x.module_id)),current=state.modules.filter(x=>x.level===u.level),next=current.find(x=>!progress.has(x.id));
  let body='';
  if(page==='home'){
- const unlock=state.lesson_unlock_at&&new Date(state.lesson_unlock_at)>new Date();
- body=`<section class="hero"><div class="eyebrow">${esc(u.goal)} · ${esc(u.level)}</div><h1>Merhaba, ${esc(u.username)}.</h1><p>Yapay zeka yolculuğuna kaldığın yerden devam et.</p><div class="stats"><div><strong>${esc(state.points)}</strong><span>Toplam puan</span></div><div><strong>${current.filter(x=>progress.has(x.id)).length}/${current.length}</strong><span>Bu seviyedeki dersler</span></div></div></section><div class="grid"><section class="card"><span class="pill">Sıradaki adım</span><h2>${next?esc(next.title):u.level==='Final'?'Yolculuğunu tamamladın!':'Seviye sınavın hazır'}</h2><p class="muted">${next?esc(next.benefit):'Tamamladığın dersleri istediğin zaman tekrar okuyabilirsin.'}</p>${next?(unlock?`<div class="notice-inline">Sonraki ders ${esc(date(state.lesson_unlock_at))} tarihinde açılacak.</div>`:`<button class="primary" data-module="${esc(next.id)}">Derse başla →</button>`):u.level!=='Final'?'<button class="primary" data-action="level-test">Seviye sınavına gir</button>':''}</section><section class="card"><span class="pill">Keşfet</span><h2>Yapay zeka gündemi</h2><p class="muted">Günün haberini oku, 10 puan kazan.</p><button class="secondary" data-page="news">Haberleri aç →</button></section></div>`;
+ const now=Date.now()+serverOffset,lessonLocked=Date.parse(state.lesson_unlock_at||'')>now,newsLocked=Date.parse(state.news_unlock_at||'')>now,n=state.news[0];
+ const clock=(id,until)=>`<span class="countdown" id="${id}" data-until="${esc(until)}">--:--:--</span>`;
+ const lessonDone=lessonLocked||(!next&&current.length>0),newsDone=newsLocked||n?.read;
+ const lessonAction=lessonLocked?'data-page="lessons"':next?`data-module="${esc(next.id)}"`:u.level!=='Final'?'data-action="level-test"':'data-page="lessons"';
+ body=`<div class="daily-heading"><h1>Bugün</h1><span>${esc(state.points)} puan · ${esc(u.level)}</span></div><div class="grid daily-grid"><button type="button" class="card daily-card ${lessonDone?'completed':''}" ${lessonAction}><span class="daily-label">Günün dersi <span aria-hidden="true">${lessonDone?'✓':'↗'}</span></span><strong class="daily-title">${lessonDone?'Dersini tamamladın!':next?esc(next.title):u.level==='Final'?'Tüm dersler tamamlandı!':'Seviye sınavın hazır'}</strong>${lessonLocked?`<span class="muted">Sonraki dersine kalan süre</span>${clock('lesson-countdown',state.lesson_unlock_at)}`:`<span class="muted">${next?esc(next.benefit):u.level==='Final'?'Tebrikler!':'Bir sonraki seviyeye geçmeye hazırsın.'}</span>`}</button><button type="button" class="card daily-card ${newsDone?'completed':''}" data-page="news"><span class="daily-label">Günün haberi <span aria-hidden="true">${newsDone?'✓':'↗'}</span></span><strong class="daily-title">${newsDone?'Haberini tamamladın!':n?esc(n.title):'Yeni haber hazırlanıyor.'}</strong>${newsLocked?`<span class="muted">Sonraki haberine kalan süre</span>${clock('news-countdown',state.news_unlock_at)}`:`<span class="muted">${newsDone?'Yeni haber yarın burada.':n?'Oku, 10 puan kazan.':'Güncel haber yakında burada.'}</span>`}</button></div>`;
  }else if(page==='lessons'){
  body='<h1>Derslerin</h1>'+state.modules.map(m=>`<button class="lesson" data-module="${esc(m.id)}"><span class="num">${progress.has(m.id)?'✓':esc(m.module_no)}</span><span>${esc(m.title)}<small>${esc(m.level)} · ${esc(m.score)} puan</small></span></button>`).join('');
  }else if(page==='news'){
@@ -40,7 +43,8 @@ function render(){
  body=`<section class="card auth"><h1>Profilin</h1><p class="muted">${esc(u.email)}</p><form id="profile-form"><label>Kullanıcı adı<input name="username" value="${esc(u.username)}" required minlength="2" maxlength="40"></label>${goalSelect(u.goal)}<button class="primary wide">Kaydet</button></form><div class="notice-inline">${u.is_premium?'Premium üyeliğin korunuyor.':'Standart üyelik · Her 24 saatte bir ders.'}<br>Web sürümünde reklam izleme ve yeni premium satın alma henüz sunulmuyor.</div><button class="text" data-action="forgot">Şifremi yenile</button><button class="text" data-action="logout">Çıkış yap</button><details class="actions"><summary>YZ101 profilimi sil</summary><p>YZ101 ders ve puan kayıtların silinir. NoWord profilin varsa korunur.</p><form id="delete-form"><label>Silmek için YZ101 yaz<input name="confirm" required pattern="YZ101" autocomplete="off"></label><button class="danger">YZ101 profilimi kalıcı sil</button></form></details></section>`;
  }
  root.innerHTML=tabs()+body;
- if(page==='news'&&document.querySelector('#news-countdown')){const tick=()=>{const el=document.querySelector('#news-countdown');if(!el)return;const sec=Math.max(0,Math.ceil((Date.parse(state.news_unlock_at)-Date.now()-serverOffset)/1000));el.textContent=[Math.floor(sec/3600),Math.floor(sec%3600/60),sec%60].map(x=>String(x).padStart(2,'0')).join(':');if(sec===0){clearInterval(countdownTimer);reload().catch(failure);}};tick();countdownTimer=setInterval(tick,1000);}
+ const clocks=[['lesson-countdown',state.lesson_unlock_at],['news-countdown',state.news_unlock_at]].filter(([id])=>document.querySelector('#'+id));
+ if(clocks.length){let expired=false;const tick=()=>{for(const [id,until] of clocks){const el=document.querySelector('#'+id);if(!el)continue;const sec=Math.max(0,Math.ceil((Date.parse(until)-Date.now()-serverOffset)/1000));el.textContent=[Math.floor(sec/3600),Math.floor(sec%3600/60),sec%60].map(x=>String(x).padStart(2,'0')).join(':');if(sec===0&&!expired){expired=true;clearInterval(countdownTimer);reload().catch(failure);}}};countdownTimer=setInterval(tick,1000);tick();}
  if(page==='ranking')loadRanking('all').catch(failure);
 }
 async function loadRanking(period){const rows=await api('ranking',{period});const node=document.querySelector('#ranking-content');if(!node)return;node.innerHTML=rows.map((r,i)=>`<div class="rank ${r.is_me?'me':''}"><span>${i+1}. ${esc(r.username)} ${r.is_me?'(Sen)':''}</span><strong>${esc(r.points)} puan</strong></div>`).join('')||'<p>Henüz kayıt bulunmuyor.</p>';}
@@ -52,13 +56,13 @@ function renderArticle(){root.innerHTML=`<button class="text" data-page="news">�
 async function execute(task,element){if(working)return;working=true;const buttons=element?.querySelectorAll?.('button')||[];buttons.forEach(b=>b.disabled=true);try{await task();}catch(e){failure(e);}finally{working=false;buttons.forEach(b=>b.disabled=false);}}
 root.addEventListener('click',event=>{const b=event.target.closest('button');if(!b||b.type==='submit'&&b.closest('form'))return;
  execute(async()=>{
-  if(b.dataset.page){page=b.dataset.page;render();return;}
+  if(b.dataset.page){page=b.dataset.page;render();window.scrollTo({top:0,left:0,behavior:'instant'});return;}
   if(b.dataset.module){lesson=await api('module',{id:b.dataset.module});page='module';render();window.scrollTo(0,0);return;}
   if(b.dataset.news){reading=state.news.find(n=>n.id===b.dataset.news);page='article';render();window.scrollTo(0,0);return;}
   if(b.dataset.ranking){await loadRanking(b.dataset.ranking);return;}
   const a=b.dataset.action;
   if(a==='refresh-news'){await reload();return;}
-  if(a==='read-today'){const n=state.news[0];if(!n)return;await api('read_news',{id:n.id});page='news';await reload();return;}
+  if(a==='read-today'){const n=state.news[0];if(!n)return;await api('read_news',{id:n.id});page='news';await reload();window.scrollTo({top:0,left:0,behavior:'instant'});return;}
   if(['login','signup','forgot'].includes(a)){auth(a);return;}
   if(a==='logout'){await client.auth.signOut({scope:'local'});session=null;state=null;recovery=false;auth();}
   if(a==='level-test'){exam={...await api('start_level'),kind:'level'};page='exam';render();window.scrollTo(0,0);}
