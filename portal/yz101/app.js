@@ -60,6 +60,7 @@ function render(){
  clearInterval(countdownTimer);updateChrome();
  if(recovery){resetScreen();return;}if(!session){auth();return;}if(!state){root.innerHTML='<section class="card"><p>Bilgilerin yükleniyor…</p></section>';return;}if(!state.profile){if(page==='exam'&&exam?.kind==='placement'){renderExam();return;}onboarding();return;}
  syncNavigation();
+ if(page==='placement-result'){renderPlacementResult();return;}
  if(page==='exam'){renderExam();return;}if(page==='module'){renderModule();return;}if(page==='article'){renderArticle();return;}
  const u=state.profile,progress=new Set(state.progress.map(x=>x.module_id)),current=state.modules.filter(x=>x.level===displayLevel(u)),next=reachedGoal(u)?null:current.find(x=>!progress.has(x.id));
  let body='';
@@ -99,6 +100,10 @@ async function loadRanking(period){const request=++rankingRequest;document.query
 function options(text){try{const a=JSON.parse(text);if(Array.isArray(a))return a.map(String);}catch{}return String(text||'').split('|').map(x=>x.trim()).filter(Boolean);}
 function question(id,title,opts){return `<fieldset class="question"><legend>${esc(title)}</legend>${options(opts).map(x=>`<label class="option"><input type="radio" name="${esc(id)}" value="${esc(x)}" required><span>${esc(x)}</span></label>`).join('')}</fieldset>`;}
 function renderModule(){root.innerHTML=`<article class="card"><div class="eyebrow">${esc(levelName(lesson.level))} · Ders ${esc(lesson.module_no)}</div><h1>${esc(lesson.title)}</h1><p class="muted">${esc(lesson.benefit)}</p><div class="content">${esc(lesson.content)}</div></article><section class="card"><h2>Kendini dene</h2><form id="module-form">${question('answer1',lesson.question1,lesson.options1)}${question('answer2',lesson.question2,lesson.options2)}<button class="primary actions">Yanıtları kontrol et</button></form></section>`;}
+function renderPlacementResult(){
+ const u=state.profile,complete=reachedGoal(u);
+ root.innerHTML=`<section class="card auth placement-result"><div class="setup-steps"><span>✓ Hesap</span><span>✓ Hedef</span><b>✓ Seviye</b></div><span class="welcome-mark">${mascot(avatarId())}</span><p class="eyebrow">Başlangıç seviyen</p><h1>${esc(levelName(u.level))}</h1><p class="muted">Test yanıtlarına göre başlangıç seviyeni belirledik.</p><p><span class="muted">Hedefin</span> <strong>${esc(u.goal)}</strong></p>${complete?'<p>Seviyen, seçtiğin hedefi karşılıyor. Yolculuğunu inceleyebilir veya profilinden hedefini genişletebilirsin.</p>':'<p>Derslerin bu seviyeden başlayacak. Her gün küçük bir adımla ilerleyebilirsin.</p>'}<button class="primary wide" data-page="${complete?'journey':'home'}">${complete?'Yolculuğumu gör':'Yolculuğa başla'}</button></section>`;
+}
 function renderExam(){root.innerHTML=back()+`<section class="card">${exam.kind==='placement'?'<div class="setup-steps"><span>✓ Hesap</span><span>✓ Hedef</span><b>3 · Seviye</b></div>':''}<h1>${exam.kind==='placement'?'Seviyeni keşfet':'Seviye testi'}</h1><p class="muted">${exam.questions.length} soru · Kendi hızında yanıtla.</p>${exam.min_correct?`<p>Geçmek için ${exam.min_correct} doğru yanıt gerekiyor.</p>`:''}<form id="exam-form">${exam.questions.map((q,i)=>question(q.id,`${i+1}. ${q.question}`,q.options)).join('')}<button class="primary actions">Sonucu gör</button></form></section>`;}
 function renderArticle(){root.innerHTML=`<article class="card"><span class="pill">${esc(reading.publish_date)}</span><h1>${esc(reading.title)}</h1><div class="content">${esc(reading.summary)}</div><button class="primary actions" data-action="read-news" ${reading.read?'disabled':''}>${reading.read?'Okundu':'Okudum · 10 puan'}</button></article>`;}
 async function execute(task,element){if(working)return;working=true;const buttons=element?.querySelectorAll?.('button')||[];buttons.forEach(b=>b.disabled=true);try{await task();}catch(e){failure(e);}finally{working=false;buttons.forEach(b=>b.disabled=false);}}
@@ -142,7 +147,7 @@ root.addEventListener('submit',event=>{event.preventDefault();const form=event.t
    if(submitter?.value==='test'){exam={...await api('start_placement'),kind:'placement',profile:values};page='exam';updateChrome();renderExam();window.scrollTo(0,0);}
    else{await api('enroll',values);page='home';await reload();notify('YZ101 profilin hazır.');}
   }else if(form.id==='exam-form'){
-   if(exam.kind==='placement'){await api('enroll',{...exam.profile,exam_id:exam.exam_id,answers:values});page='home';await reload();notify(`Başlangıç seviyen: ${levelName(state.profile.level)}`);}
+   if(exam.kind==='placement'){await api('enroll',{...exam.profile,exam_id:exam.exam_id,answers:values});page='placement-result';await reload();window.scrollTo(0,0);}
    else{const r=await api('submit_level',{exam_id:exam.exam_id,answers:values});page='home';await reload();notify(`${r.correct}/${r.total} doğru. ${r.passed?(reachedGoal(state.profile)?'Hedefine ulaştın!':`Yeni seviyen: ${levelName(r.level)}`):'Tekrar deneyebilirsin.'}`);}
   }else if(form.id==='module-form'){
    const r=await api('complete_module',{id:lesson.id,...values});if(!r.passed){notify('Yanıtlarını tekrar gözden geçir.');return;}
