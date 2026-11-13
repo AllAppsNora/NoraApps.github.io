@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#faf8f4"><title>YZ101 · Bildirimler</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="style.css?v=20261113-push-status"><style>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#faf8f4"><title>YZ101 · Bildirimler</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="style.css?v=20261113-push-help"><style>
 .notification-intro{font-size:15px;max-width:44ch;margin-bottom:16px}
 .notification-settings{margin-top:8px}
 .notification-state,.notification-time{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;border-bottom:1px solid var(--border)}
@@ -14,13 +14,17 @@
 .notification-message{margin-top:18px;font-size:14px;line-height:1.6}
 .notification-state .pill[data-active="true"]{background:#e0f3e8;color:#066b61}
 .notification-message:empty{display:none}
+.permission-help{margin-top:16px;padding:16px 18px;background:#eaf4f8;border-radius:16px;font-size:14px;line-height:1.6}
+.permission-help ol{padding-left:20px;margin:10px 0}.permission-help li+li{margin-top:8px}
+.permission-help summary{cursor:pointer;color:#176185}.permission-help details p{margin:8px 0 0}
+[hidden]{display:none!important}
 @media(max-width:380px){.notification-state>strong,.notification-time>span{font-size:16px}.notification-state .pill{font-size:11px;padding:5px 8px}}
 </style></head><body data-page="notifications"><header><a href="./" class="brand" aria-label="YZ101 ana sayfa"><img src="logo.png" alt=""><span>Yapay Zekâ <b>101</b></span></a></header>
 <main><h1>Bildirimler</h1><p class="muted notification-intro">Dersin veya haberin hazır olduğunda hatırlatalım.</p>
 <section id="controls" class="notification-settings" hidden>
 <div class="notification-state"><strong>Hatırlatmalar</strong><span id="status" class="pill">Kontrol ediliyor…</span></div>
-<p class="muted notification-hint">Tarayıcı izni: <span id="permission">Kontrol ediliyor…</span></p><button class="primary wide" id="enable">Bildirimleri aç</button><button class="text" id="disable" hidden>Bildirimleri kapat</button>
+<section id="permission-help" class="permission-help" hidden aria-labelledby="help-title"><strong id="help-title">Nasıl açabilirim?</strong><ol id="help-steps"></ol><details><summary>Hâlâ açılmıyorsa</summary><p>Telefonunun Ayarlar → Uygulamalar → Chrome → Bildirimler bölümünde de iznin açık olduğunu kontrol et.</p></details></section><button class="primary wide" id="enable">Bildirimleri aç</button><button class="text" id="disable" hidden>Bildirimleri kapat</button>
 <label class="notification-time"><span>Hatırlatma saati</span><input id="time" type="time" min="10:00" max="21:55" step="300" value="21:00" required></label>
 <p class="muted notification-hint">Günde en fazla bir kez · Cihazının saat diliminde</p><button class="secondary" id="save" hidden>Saati kaydet</button>
 <button class="text wide" id="test" hidden>Test bildirimi gönder</button></section><p class="notification-message muted" id="message" role="status" aria-live="polite"></p>
-</main><script src="supabase.min.js"></script><script>window.PUSH_CONFIG={"url":"https://gjztdlihsfmozxcgdwke.supabase.co","key":"sb_publishable_tDQAKMpHaorQAplXqg5Nqg_zwOImZeT","storageKey":"nora-yz101-auth","sessionStorage":false,"worker":"/yz101/push-worker.js","scope":"/yz101/"};</script><script src="push-settings.js?v=20261113-push-status"></script></body></html>
+</main><script src="supabase.min.js"></script><script>window.PUSH_CONFIG={"url":"https://gjztdlihsfmozxcgdwke.supabase.co","key":"sb_publishable_tDQAKMpHaorQAplXqg5Nqg_zwOImZeT","storageKey":"nora-yz101-auth","sessionStorage":false,"worker":"/yz101/push-worker.js","scope":"/yz101/"};</script><script src="push-settings.js?v=20261113-push-help"></script></body></html>
