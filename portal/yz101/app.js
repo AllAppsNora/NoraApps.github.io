@@ -15,24 +15,43 @@ const levels=['A1','A2','B1','B2','C1','C2'];
 const names=['Meraklı','Kaşif','Uygulayıcı','Üretici','Problem Çözücü','Yol Gösterici'];
 const levelName=l=>names[levels.indexOf(l)]||(l==='Final'?'Yol Gösterici':l);
 let selectedLevel=null;
+let restoringHistory=false;
+function syncNavigation(){
+ const snapshot={yz101:true,page,selectedLevel,lesson,reading,exam};
+ if(!history.state?.yz101){history.replaceState({yz101:true,page:'home'},'',location.pathname+location.search);}
+ if(!restoringHistory&&(history.state.page!==page||history.state.selectedLevel!==selectedLevel))history.pushState(snapshot,'',location.pathname+location.search);
+}
+window.addEventListener('popstate',event=>{
+ if(!session||recovery)return;
+ const route=event.state?.yz101?event.state:{page:'home'};
+ page=route.page||'home';selectedLevel=route.selectedLevel||null;lesson=route.lesson||null;reading=route.reading||null;exam=route.exam||null;
+ restoringHistory=true;render();restoringHistory=false;window.scrollTo(0,0);
+});
+function updateChrome(){
+ document.body.dataset.page=page;
+ const profile=document.querySelector('#header-profile');
+ if(profile){profile.hidden=!session||!state?.profile;profile.textContent=(state?.profile?.username||'K').slice(0,1).toLocaleUpperCase('tr-TR');}
+}
+document.querySelector('#header-profile')?.addEventListener('click',()=>{if(!state?.profile)return;page='profile';render();window.scrollTo(0,0);});
 const back=(to='home')=>`<button class="text back" data-page="${to}" aria-label="Geri">← <span>Geri</span></button>`;
-function tabs(){return page==='home'?`<div class="home-tools"><button class="avatar" data-page="profile" aria-label="Profilim">${esc((state.profile.username||'K').slice(0,1).toLocaleUpperCase('tr-TR'))}</button></div>`:back(page==='lessons'?'journey':page==='ranking'?'profile':'home');}
+function tabs(){return page==='home'?'':back(page==='lessons'?'journey':page==='ranking'?'profile':'home');}
 function progressBar(done,total){return `<progress max="${total||1}" value="${done}" aria-label="${done} / ${total} ders tamamlandı"></progress>`;}
-function journeySummary(u,progress,current){const done=current.filter(m=>progress.has(m.id)).length;return `<button class="journey-summary" data-page="journey"><span class="row between"><strong>Yolculuğum ›</strong><span class="points">${esc(state.points)} puan</span></span><span class="muted">${esc(levelName(u.level))} · ${done} / ${current.length} ders</span>${progressBar(done,current.length)}</button>`;}
+function journeySummary(u,progress,current){const done=current.filter(m=>progress.has(m.id)).length;return `<button class="journey-summary" data-page="journey" aria-label="Öğrenme yolculuğunu aç"><span class="compact-progress"><strong>${esc(levelName(u.level))}</strong><span>${done}/${current.length} ders</span><span class="points">${esc(state.points)} puan</span><span aria-hidden="true">›</span></span>${progressBar(done,current.length)}</button>`;}
 function journey(u,progress,current){const index=u.level==='Final'?6:levels.indexOf(u.level),remaining=current.filter(m=>!progress.has(m.id)).length;
  const target=names[index+1];
  let tip=u.level==='Final'?'Tüm seviyeleri tamamladın. İstediğin derse dönüp bilgilerini tazeleyebilirsin.':remaining===0?'Seviye testin hazır. Öğrendiklerini sınama zamanı.':u.is_premium?`Bu seviyede ${remaining} dersin kaldı.`:`Günde 1 dersle yaklaşık ${remaining} gün sonra ${target?esc(target)+' testine':'son seviye testine'} hazırsın.`;
  return `<h1>Yolculuğum</h1><div class="journey-path">${levels.map((l,i)=>{const modules=state.modules.filter(m=>m.level===l),done=modules.filter(m=>progress.has(m.id)).length;return `<button class="milestone ${i<index?'done':i===index?'current':i===index+1?'upcoming':''}" data-level="${l}" ${i===index?'aria-current="step"':''}><span class="step-dot">${i<index?'✓':i+1}</span><span class="step-body"><strong>${names[i]}</strong>${i===index?`<span class="pill">Buradasın</span><small>${done} / ${modules.length} ders</small>${progressBar(done,modules.length)}`:''}<span class="chevron">›</span></span></button>`;}).join('')}</div><aside class="journey-tip">${tip}${u.level!=='Final'?'<small>Geçiş, test sonucuna bağlıdır.</small>':''}</aside>${remaining===0&&u.level!=='Final'?'<button class="primary wide actions" data-action="level-test">Seviye testine başla</button>':''}`;
 }
 function auth(mode='login',message=''){
- page=mode;const reset=mode==='forgot',signup=mode==='signup';
+ page=mode;updateChrome();const reset=mode==='forgot',signup=mode==='signup';
  root.innerHTML=`<section class="card auth"><div class="eyebrow">Yapay zekayı adım adım keşfet</div><h1>${reset?'Şifreni yenile':signup?'Aramıza katıl':'Hoş geldin.'}</h1>${message?`<div class="notice-inline">${esc(message)}</div>`:''}<form id="auth-form"><label>E-posta<input name="email" type="email" required autocomplete="email"></label>${reset?'':`<label>Şifre<input name="password" type="password" required minlength="6" autocomplete="${signup?'new-password':'current-password'}"></label>`}<button class="primary wide">${reset?'Bağlantı gönder':signup?'Hesap oluştur':'Giriş yap'}</button></form><div class="actions row">${reset?'<button class="text" data-action="login">Girişe dön</button>':`<button class="text" data-action="${signup?'login':'signup'}">${signup?'Zaten hesabım var':'Hesap oluştur'}</button><button class="text" data-action="forgot">Şifremi unuttum</button>`}</div><p class="muted">NoWord hesabın varsa aynı e-posta ve şifreyle giriş yapabilirsin. YZ101 profilini ayrıca oluşturacağız.</p></section>`;
 }
 function resetScreen(){root.innerHTML=`<section class="card auth"><h1>Şifreni yenile</h1><form id="reset-form"><label>Şifre<input name="password" type="password" minlength="6" required autocomplete="new-password" placeholder="En az 6 karakter"></label><label>Tekrar<input name="repeat" type="password" minlength="6" required autocomplete="new-password"></label><p class="muted">Bu şifre NoWord girişin için de geçerli olacak.</p><button class="primary wide">Kaydet</button></form></section>`;}
 function onboarding(){root.innerHTML=`<section class="card auth"><div class="eyebrow">Sana özel bir başlangıç</div><h1>YZ101 profilin</h1><form id="enroll-form"><label>Kullanıcı adı<input name="username" required minlength="2" maxlength="40" autocomplete="nickname"></label>${goalSelect('Anlamak')}<p class="muted">İlk seviyeden başlayabilir veya 5 soruyla seviyeni belirleyebilirsin.</p><button class="primary wide" name="start" value="begin">İlk seviyeden başla</button><button class="secondary wide actions" name="start" value="test">Seviyemi belirle</button></form><button class="text" data-action="logout">Çıkış yap</button></section>`;}
 function render(){
- clearInterval(countdownTimer);
+ clearInterval(countdownTimer);updateChrome();
  if(recovery){resetScreen();return;}if(!session){auth();return;}if(!state){root.innerHTML='<section class="card"><p>Bilgilerin yükleniyor…</p></section>';return;}if(!state.profile){onboarding();return;}
+ syncNavigation();
  if(page==='exam'){renderExam();return;}if(page==='module'){renderModule();return;}if(page==='article'){renderArticle();return;}
  const u=state.profile,progress=new Set(state.progress.map(x=>x.module_id)),current=state.modules.filter(x=>x.level===u.level),next=current.find(x=>!progress.has(x.id));
  let body='';
@@ -41,11 +60,12 @@ function render(){
  const clock=(id,until)=>`<span class="countdown" id="${id}" data-until="${esc(until)}">--:--:--</span>`;
  const lessonDone=lessonLocked||u.level==='Final'||(!next&&current.length>0),newsDone=newsLocked||n?.read;
  const lessonAction=lessonLocked?'data-page="lessons"':next?`data-module="${esc(next.id)}"`:u.level!=='Final'?'data-action="level-test"':'data-page="lessons"';
- body=`<div class="daily-heading"><h1>Bugün</h1></div>${journeySummary(u,progress,current)}<div class="grid daily-grid"><button type="button" class="card daily-card ${lessonDone?'completed':''}" ${lessonAction}><span class="daily-label">Günün dersi <span aria-hidden="true">${lessonDone?'✓':'↗'}</span></span><strong class="daily-title">${lessonDone?'Dersini tamamladın!':next?esc(next.title):u.level==='Final'?'Tüm dersler tamamlandı!':'Seviye sınavın hazır'}</strong>${lessonLocked?`<span class="muted">Sonraki dersine kalan süre</span>${clock('lesson-countdown',state.lesson_unlock_at)}`:`<span class="muted">${next?esc(next.benefit):u.level==='Final'?'Tebrikler!':'Bir sonraki seviyeye geçmeye hazırsın.'}</span>`}</button><button type="button" class="card daily-card ${newsDone?'completed':''}" data-page="news"><span class="daily-label">Günün haberi <span aria-hidden="true">${newsDone?'✓':'↗'}</span></span><strong class="daily-title">${newsDone?'Haberini tamamladın!':n?esc(n.title):'Yeni haber hazırlanıyor.'}</strong>${newsLocked?`<span class="muted">Sonraki haberine kalan süre</span>${clock('news-countdown',state.news_unlock_at)}`:`<span class="muted">${newsDone?'Yeni haber yarın burada.':n?'Oku, 10 puan kazan.':'Güncel haber yakında burada.'}</span>`}</button></div>`;
+ body=`${journeySummary(u,progress,current)}<div class="grid daily-grid"><button type="button" class="card daily-card ${lessonDone?'completed':''}" ${lessonAction}><span class="daily-label">Günün dersi <span aria-hidden="true">${lessonDone?'✓':'↗'}</span></span><strong class="daily-title">${lessonDone?'Dersini tamamladın!':next?esc(next.title):u.level==='Final'?'Tüm dersler tamamlandı!':'Seviye sınavın hazır'}</strong>${lessonLocked?`<span class="muted">Sonraki dersine kalan süre</span>${clock('lesson-countdown',state.lesson_unlock_at)}`:`<span class="muted">${next?esc(next.benefit):u.level==='Final'?'Tebrikler!':'Bir sonraki seviyeye geçmeye hazırsın.'}</span>`}</button><button type="button" class="card daily-card ${newsDone?'completed':''}" data-page="news"><span class="daily-label">Günün haberi <span aria-hidden="true">${newsDone?'✓':'↗'}</span></span><strong class="daily-title">${newsDone?'Haberini tamamladın!':n?esc(n.title):'Yeni haber hazırlanıyor.'}</strong>${newsLocked?`<span class="muted">Sonraki haberine kalan süre</span>${clock('news-countdown',state.news_unlock_at)}`:`<span class="muted">${newsDone?'Yeni haber yarın burada.':n?'Oku, 10 puan kazan.':'Güncel haber yakında burada.'}</span>`}</button></div>`;
  }else if(page==='journey'){
  body=journey(u,progress,current);
  }else if(page==='lessons'){
- body=`<h1>${esc(levelName(selectedLevel||u.level))}</h1><p class="muted">Dersler</p>`+state.modules.filter(m=>m.level===(selectedLevel||u.level)).map(m=>`<button class="lesson" data-module="${esc(m.id)}"><span class="num">${progress.has(m.id)?'✓':esc(m.module_no)}</span><span>${esc(m.title)}<small>${esc(levelName(m.level))} · ${esc(m.score)} puan</small></span></button>`).join('');
+ const locked=u.level!=='Final'&&levels.indexOf(selectedLevel||u.level)>levels.indexOf(u.level);
+ body=`<h1>${esc(levelName(selectedLevel||u.level))}</h1>${locked?`<section class="card locked-level"><span class="pill">Henüz açılmadı</span><h2>Buraya birlikte ilerleyeceğiz.</h2><p class="muted">Bu seviyenin dersleri, önceki seviyeyi tamamlayıp testini geçtiğinde açılacak.</p><button class="primary" data-page="home">Günün dersine dön</button></section>`:'<p class="muted">Dersler</p>'}`+state.modules.filter(m=>m.level===(selectedLevel||u.level)).map(m=>`<button class="lesson" data-module="${esc(m.id)}"><span class="num">${progress.has(m.id)?'✓':esc(m.module_no)}</span><span>${esc(m.title)}<small>${esc(levelName(m.level))} · ${esc(m.score)} puan</small></span></button>`).join('');
  }else if(page==='news'){
  const n=state.news[0],left=Date.parse(state.news_unlock_at||0)-(Date.now()+serverOffset);
  if(left>0){body='<section class="card auth"><span class="pill">✓ +10 puan</span><h1>Bugünlük tamam!</h1><p>Yeni bir haber için yarın görüşürüz.</p><p class="muted">Sonraki okuma hakkına kalan süre</p><strong id="news-countdown" style="font-size:36px;font-variant-numeric:tabular-nums"></strong></section>';}
