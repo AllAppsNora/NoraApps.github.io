@@ -1,16 +1,16 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#faf8f4"><title>YZ101 · Bildirimler</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="style.css?v=20261113-push-help"><style>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#faf8f4"><title>YZ101 · Bildirimler</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="style.css?v=20261113-push-switch"><style>
 .notification-intro{font-size:15px;max-width:44ch;margin-bottom:16px}
 .notification-settings{margin-top:8px}
 .notification-state,.notification-time{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;border-bottom:1px solid var(--border)}
 .notification-state>strong,.notification-time>span{font-size:18px;font-weight:650}
 .notification-state .pill{font-size:12px;white-space:nowrap;background:#e3f2fa;color:#176185}
 .notification-settings .primary{margin:18px 0 6px;min-height:48px}
-.notification-settings #disable{font-size:14px;padding:10px 0;color:var(--muted)}
+
 .notification-time input{width:auto;max-width:145px;margin:0;padding:9px 12px;border:1px solid #cbdde7;background:#fff;font-size:16px;color:#0876a7}
 .notification-hint{font-size:13px;margin:12px 0 0;line-height:1.6}
 .notification-settings #save{margin:14px 0 0;background:#e3f2fa;color:#176185}
-.notification-settings #test{text-align:left;font-size:16px;font-weight:600;color:#0876a7;padding:20px 0;min-height:48px}
+
 .notification-message{margin-top:18px;font-size:14px;line-height:1.6}
 .notification-state .pill[data-active="true"]{background:#e0f3e8;color:#066b61}
 .notification-message:empty{display:none}
@@ -19,12 +19,19 @@
 .permission-help summary{cursor:pointer;color:#176185}.permission-help details p{margin:8px 0 0}
 [hidden]{display:none!important}
 @media(max-width:380px){.notification-state>strong,.notification-time>span{font-size:16px}.notification-state .pill{font-size:11px;padding:5px 8px}}
+.notification-toggle{display:flex;align-items:center;gap:10px;background:transparent!important;color:var(--muted);border:0;padding:8px 0 8px 8px;min-height:44px;font-size:14px;cursor:pointer}
+.switch-track{display:block;flex-shrink:0;width:44px;height:26px;border-radius:20px;background:#bdc8ce;position:relative;transition:background .2s}
+.switch-track:after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform .2s}
+.notification-toggle[aria-checked="true"] .switch-track{background:#087fb8}
+.notification-toggle[aria-checked="true"] .switch-track:after{transform:translateX(18px)}
+.notification-toggle:focus-visible{outline:2px solid #087fb8;outline-offset:4px;border-radius:8px}
+.notification-toggle:disabled{opacity:.6;cursor:wait}
 </style></head><body data-page="notifications"><header><a href="./" class="brand" aria-label="YZ101 ana sayfa"><img src="logo.png" alt=""><span>Yapay Zekâ <b>101</b></span></a></header>
 <main><h1>Bildirimler</h1><p class="muted notification-intro">Dersin veya haberin hazır olduğunda hatırlatalım.</p>
 <section id="controls" class="notification-settings" hidden>
-<div class="notification-state"><strong>Hatırlatmalar</strong><span id="status" class="pill">Kontrol ediliyor…</span></div>
-<section id="permission-help" class="permission-help" hidden aria-labelledby="help-title"><strong id="help-title">Nasıl açabilirim?</strong><ol id="help-steps"></ol><details><summary>Hâlâ açılmıyorsa</summary><p>Telefonunun Ayarlar → Uygulamalar → Chrome → Bildirimler bölümünde de iznin açık olduğunu kontrol et.</p></details></section><button class="primary wide" id="enable">Bildirimleri aç</button><button class="text" id="disable" hidden>Bildirimleri kapat</button>
+<div class="notification-state"><strong>Hatırlatmalar</strong><button id="toggle" class="notification-toggle" type="button" role="switch" aria-checked="false" aria-label="Hatırlatmalar"><span id="status">Kontrol ediliyor…</span><span class="switch-track" aria-hidden="true"></span></button></div>
+<section id="permission-help" class="permission-help" hidden aria-labelledby="help-title"><strong id="help-title">Nasıl açabilirim?</strong><ol id="help-steps"></ol><details><summary>Hâlâ açılmıyorsa</summary><p>Telefonunun Ayarlar → Uygulamalar → Chrome → Bildirimler bölümünde de iznin açık olduğunu kontrol et.</p></details></section><button class="primary wide" id="enable">Bildirimleri aç</button>
 <label class="notification-time"><span>Hatırlatma saati</span><input id="time" type="time" min="10:00" max="21:55" step="300" value="21:00" required></label>
-<p class="muted notification-hint">Günde en fazla bir kez · Cihazının saat diliminde</p><button class="secondary" id="save" hidden>Saati kaydet</button>
-<button class="text wide" id="test" hidden>Test bildirimi gönder</button></section><p class="notification-message muted" id="message" role="status" aria-live="polite"></p>
-</main><script src="supabase.min.js"></script><script>window.PUSH_CONFIG={"url":"https://gjztdlihsfmozxcgdwke.supabase.co","key":"sb_publishable_tDQAKMpHaorQAplXqg5Nqg_zwOImZeT","storageKey":"nora-yz101-auth","sessionStorage":false,"worker":"/yz101/push-worker.js","scope":"/yz101/"};</script><script src="push-settings.js?v=20261113-push-help"></script></body></html>
+<button class="secondary" id="save" hidden>Saati kaydet</button>
+</section><p class="notification-message muted" id="message" role="status" aria-live="polite"></p>
+</main><script src="supabase.min.js"></script><script>window.PUSH_CONFIG={"url":"https://gjztdlihsfmozxcgdwke.supabase.co","key":"sb_publishable_tDQAKMpHaorQAplXqg5Nqg_zwOImZeT","storageKey":"nora-yz101-auth","sessionStorage":false,"worker":"/yz101/push-worker.js","scope":"/yz101/"};</script><script src="push-settings.js?v=20261113-push-switch"></script></body></html>
