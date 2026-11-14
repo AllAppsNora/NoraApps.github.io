@@ -33,3 +33,17 @@ header{padding-top:16px;padding-bottom:8px}main{padding-top:12px;min-height:0}ma
 .news-expand[open] summary{margin-bottom:20px}
 .news-full-text{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;font-size:16px;line-height:1.8}
 .news-expand button.primary{background:#15803d}
+
+
+/* Consistent app feedback */
+.app-result-dialog{border:0;border-radius:20px;padding:28px;width:min(90vw,380px);max-width:380px;text-align:center;box-shadow:0 20px 65px #0003;color:#153951;background:#fff}
+.app-result-dialog::backdrop{background:#101b2d80}
+.app-result-dialog h2{margin:0 0 12px}
+.app-result-dialog p{margin:0 0 24px;line-height:1.6}
+/* Compact, content-led home cards; no stretched empty middle */
+body[data-page=home] .daily-grid{flex:initial;grid-template-rows:none;align-items:stretch}
+body[data-page=home] .daily-card{min-height:0;height:auto;justify-content:flex-start;gap:9px;padding:19px 22px}
+body[data-page=home] .daily-card .daily-label{margin-bottom:0}
+body[data-page=home] .daily-card .countdown{margin-top:0}
+body[data-page=home] .daily-card .muted{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;line-height:1.45}
+@media(max-height:700px){body[data-page=home] .daily-card{min-height:0;padding:16px 20px;gap:8px}}
