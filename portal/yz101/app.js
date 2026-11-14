@@ -8,9 +8,9 @@ let session=null,state=null,page='home',exam=null,lesson=null,reading=null,recov
 const goals=['Anlamak','Kullanmak','Üretmek'];
 const goalSelect=v=>`<label>Hedef<select name="goal">${goals.map(x=>`<option ${v===x?'selected':''}>${x}</option>`).join('')}</select></label>`;
 function notify(message){showResultDialog('Bilgilendirme',message,'Tamam');}
-function showResultDialog(title,message,buttonLabel='Tamam'){
+function showResultDialog(title,message,buttonLabel='Tamam',tone='info'){
  document.querySelector('#app-dialog')?.remove();
- const d=document.createElement('dialog');d.id='app-dialog';d.className='app-result-dialog';
+ const d=document.createElement('dialog');d.id='app-dialog';d.className='app-result-dialog';d.dataset.tone=tone;
  d.innerHTML='<h2>'+esc(title)+'</h2><p>'+esc(message)+'</p><button class="primary wide" type="button">'+esc(buttonLabel)+'</button>';
  document.body.append(d);d.showModal();
  const close=()=>{d.close();d.remove();};
@@ -89,9 +89,9 @@ function render(){
  body=`<h1>${esc(levelName(selectedLevel||displayLevel(u)))}</h1>${locked?`<section class="card locked-level"><span class="pill">Henüz açılmadı</span><h2>Buraya birlikte ilerleyeceğiz.</h2><p class="muted">Bu seviyenin dersleri, önceki seviyeyi tamamlayıp testini geçtiğinde açılacak.</p><button class="primary" data-page="home">Günün dersine dön</button></section>`:'<p class="muted">Dersler</p>'}`+state.modules.filter(m=>m.level===(selectedLevel||displayLevel(u))).map(m=>`<button class="lesson" data-module="${esc(m.id)}"><span class="num">${progress.has(m.id)?'✓':esc(m.module_no)}</span><span>${esc(m.title)}<small>${esc(levelName(m.level))} · ${esc(m.score)} puan</small></span></button>`).join('');
  }else if(page==='news'){
  const n=state.news[0],left=Date.parse(state.news_unlock_at||0)-(Date.now()+serverOffset);
- if(left>0){body='<section class="card auth"><span class="pill">✓ +10 puan</span><h1>Bugünlük tamam!</h1><p>Yeni bir haber için yarın görüşürüz.</p><p class="muted">Sonraki okuma hakkına kalan süre</p><strong id="news-countdown" style="font-size:36px;font-variant-numeric:tabular-nums"></strong></section>';}
+ if(left>0){body='<section class="card auth news-waiting"><span class="pill">✓ +10 puan</span><h1>Bugünlük tamam!</h1><p>Yeni bir haber için yarın görüşürüz.</p><p class="muted">Sonraki okuma hakkına kalan süre</p><strong id="news-countdown" style="font-size:36px;font-variant-numeric:tabular-nums"></strong></section>';}
  else if(n&&!n.read){body=`<h1>Günün haberi</h1><article class="card news-article"><p class="news-source"><a href="${esc(n.source_url||'#')}" target="_blank" rel="noopener noreferrer" ${n.source_url?'':'hidden'}>${esc(n.source_name||'Haber kaynağı')} ↗</a><span class="muted"> · ${esc(n.source_published_at?new Date(n.source_published_at).toLocaleDateString('tr-TR'):n.publish_date)}</span></p><h2>${esc(n.title)}</h2><div class="content news-full-text">${esc(n.full_text||n.summary)}</div><button class="primary wide actions news-read-button" data-action="read-today">Okudum · 10 puan</button></article>`;}
- else{body='<section class="card auth"><h1>'+ (n?.read?'Bugünlük tamam!':'Yeni haber hazırlanıyor.')+'</h1><p class="muted">'+(n?.read?'Bugünün haberini okudun. Yeni haber yarın burada.':'Güncel bir yapay zeka haberi yayımlandığında burada göreceksin.')+'</p><button class="secondary" data-action="refresh-news">Yenile</button></section>';}
+ else{body='<section class="card auth news-completed"><h1>'+ (n?.read?'Bugünlük tamam!':'Yeni haber hazırlanıyor.')+'</h1><p class="muted">'+(n?.read?'Bugünün haberini okudun. Yeni haber yarın burada.':'Güncel bir yapay zeka haberi yayımlandığında burada göreceksin.')+'</p><button class="secondary" data-action="refresh-news">Yenile</button></section>';}
  }else if(page==='ranking'){
  body='<h1>Sıralama</h1><div class="ranking-periods" role="group" aria-label="Sıralama dönemi"><button data-ranking="all" aria-pressed="true">Tüm zamanlar</button><button data-ranking="week" aria-pressed="false">Bu hafta</button><button data-ranking="month" aria-pressed="false">Bu ay</button></div><section class="card actions" id="ranking-content">Yükleniyor…</section>';
  }else if(page==='legal'){
@@ -111,20 +111,19 @@ async function loadRanking(period){const request=++rankingRequest;document.query
 function options(text){try{const a=JSON.parse(text);if(Array.isArray(a))return a.map(String);}catch{}return String(text||'').split('|').map(x=>x.trim()).filter(Boolean);}
 function question(id,title,opts){return `<fieldset class="question"><legend>${esc(title)}</legend>${options(opts).map(x=>`<label class="option"><input type="radio" name="${esc(id)}" value="${esc(x)}" required><span>${esc(x)}</span></label>`).join('')}</fieldset>`;}
 function lessonResult(passed,message){
- const existing=document.querySelector('#lesson-result');existing?.remove();
- const dialog=document.createElement('dialog');dialog.id='lesson-result';dialog.setAttribute('aria-label',passed?'Ders başarıyla tamamlandı':'Ders tamamlanamadı');
- dialog.style.cssText='border:0;border-radius:20px;padding:28px;max-width:min(90vw,380px);width:100%;text-align:center;box-shadow:0 20px 65px #0003;color:#153951';
- dialog.innerHTML='<h2 style="margin:0 0 12px">'+(passed?'🎉 Tebrikler!':'Bir kez daha dene')+'</h2><p style="margin:0 0 24px">'+esc(message)+'</p><button class="primary wide" type="button" id="lesson-result-close">'+(passed?'Devam et':'Tekrar dene')+'</button>';
- root.append(dialog);dialog.showModal();
- dialog.querySelector('button').addEventListener('click',()=>{dialog.close();dialog.remove();if(!passed){const form=document.querySelector('#module-form');form?.reset();form?.querySelector('input')?.focus();}else window.scrollTo(0,0);});
- dialog.addEventListener('cancel',e=>{e.preventDefault();dialog.querySelector('button').click();});
+ showResultDialog(passed?'🎉 Tebrikler!':'Bir kez daha dene',message,passed?'Devam et':'Tekrar dene',passed?'success':'error');
+ const dialog=document.querySelector('#app-dialog');
+ dialog?.querySelector('button')?.addEventListener('click',()=>{
+  if(!passed){const form=document.querySelector('#module-form');form?.reset();form?.querySelector('input')?.focus();}
+  else window.scrollTo(0,0);
+ },{once:true});
 }
-function renderModule(){root.innerHTML=`<article class="card"><div class="eyebrow">${esc(levelName(lesson.level))} · Ders ${esc(lesson.module_no)}</div><h1>${esc(lesson.title)}</h1><p class="muted">${esc(lesson.benefit)}</p><div class="content">${esc(lesson.content)}</div></article><section class="card"><h2>Kendini dene</h2><form id="module-form">${question('answer1',lesson.question1,lesson.options1)}${question('answer2',lesson.question2,lesson.options2)}<button class="primary actions">Yanıtları kontrol et</button></form></section>`;}
+function renderModule(){root.innerHTML=`<article class="card lesson-reading"><div class="eyebrow">${esc(levelName(lesson.level))} · Ders ${esc(lesson.module_no)}</div><h1>${esc(lesson.title)}</h1><p class="muted">${esc(lesson.benefit)}</p><div class="content">${esc(lesson.content)}</div></article><section class="card lesson-questions"><h2>Kendini dene</h2><form id="module-form">${question('answer1',lesson.question1,lesson.options1)}${question('answer2',lesson.question2,lesson.options2)}<button class="primary actions">Yanıtları kontrol et</button></form></section>`;}
 function renderPlacementResult(){
  const u=state.profile,complete=reachedGoal(u);
  root.innerHTML=`<section class="card auth placement-result"><div class="setup-steps"><span>✓ Hesap</span><span>✓ Hedef</span><b>✓ Seviye</b></div><span class="welcome-mark">${mascot(avatarId())}</span><p class="eyebrow">Başlangıç seviyen</p><h1>${esc(levelName(u.level))}</h1><p class="muted">Test yanıtlarına göre başlangıç seviyeni belirledik.</p><p><span class="muted">Hedefin</span> <strong>${esc(u.goal)}</strong></p>${complete?'<p>Seviyen, seçtiğin hedefi karşılıyor. Yolculuğunu inceleyebilir veya profilinden hedefini genişletebilirsin.</p>':'<p>Derslerin bu seviyeden başlayacak. Her gün küçük bir adımla ilerleyebilirsin.</p>'}<button class="primary wide" data-page="${complete?'journey':'home'}">${complete?'Yolculuğumu gör':'Yolculuğa başla'}</button></section>`;
 }
-function renderExam(){root.innerHTML=back()+`<section class="card">${exam.kind==='placement'?'<div class="setup-steps"><span>✓ Hesap</span><span>✓ Hedef</span><b>3 · Seviye</b></div>':''}<h1>${exam.kind==='placement'?'Seviyeni keşfet':'Seviye testi'}</h1><p class="muted">${exam.questions.length} soru · Kendi hızında yanıtla.</p>${exam.min_correct?`<p>Geçmek için ${exam.min_correct} doğru yanıt gerekiyor.</p>`:''}<form id="exam-form">${exam.questions.map((q,i)=>question(q.id,`${i+1}. ${q.question}`,q.options)).join('')}<button class="primary actions">Sonucu gör</button></form></section>`;}
+function renderExam(){root.innerHTML=back()+`<section class="card ${exam.kind==='placement'?'placement-exam':'level-exam'}">${exam.kind==='placement'?'<div class="setup-steps"><span>✓ Hesap</span><span>✓ Hedef</span><b>3 · Seviye</b></div>':''}<h1>${exam.kind==='placement'?'Seviyeni keşfet':'Seviye testi'}</h1><p class="muted">${exam.questions.length} soru · Kendi hızında yanıtla.</p>${exam.min_correct?`<p>Geçmek için ${exam.min_correct} doğru yanıt gerekiyor.</p>`:''}<form id="exam-form">${exam.questions.map((q,i)=>question(q.id,`${i+1}. ${q.question}`,q.options)).join('')}<button class="primary actions">Sonucu gör</button></form></section>`;}
 function renderArticle(){root.innerHTML=`<article class="card"><p><a href="${esc(reading.source_url||'#')}" target="_blank" rel="noopener noreferrer" ${reading.source_url?'':'hidden'}>${esc(reading.source_name||'Haber kaynağı')} ↗</a> <span class="muted">· ${esc(reading.source_published_at?new Date(reading.source_published_at).toLocaleDateString('tr-TR'):reading.publish_date)}</span></p><h1>${esc(reading.title)}</h1><div class="content">${esc(reading.summary)}</div><button class="primary wide actions" data-action="read-news" ${reading.read?'disabled':''}>${reading.read?'Okundu':'Okudum · 10 puan'}</button></article>`;}
 async function execute(task,element){if(working)return;working=true;const buttons=element?.querySelectorAll?.('button')||[];buttons.forEach(b=>b.disabled=true);try{await task();}catch(e){failure(e);}finally{working=false;buttons.forEach(b=>b.disabled=false);}}
 root.addEventListener('click',event=>{const b=event.target.closest('button');if(!b||b.type==='submit'&&b.closest('form'))return;
