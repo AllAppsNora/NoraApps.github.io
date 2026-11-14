@@ -100,6 +100,15 @@ let rankingRequest=0;
 async function loadRanking(period){const request=++rankingRequest;document.querySelectorAll('[data-ranking]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ranking===period)));const rows=await api('ranking',{period});if(request!==rankingRequest||page!=='ranking')return;const node=document.querySelector('#ranking-content');if(!node)return;node.innerHTML=rows.map((r,i)=>`<div class="rank ${r.is_me?'me':''}"><span><b class="rank-number">${i+1}</b> ${esc(r.username)} ${r.is_me?'(Sen)':''}</span><strong>${esc(r.points)} puan</strong></div>`).join('')||'<p>Henüz kayıt bulunmuyor.</p>';}
 function options(text){try{const a=JSON.parse(text);if(Array.isArray(a))return a.map(String);}catch{}return String(text||'').split('|').map(x=>x.trim()).filter(Boolean);}
 function question(id,title,opts){return `<fieldset class="question"><legend>${esc(title)}</legend>${options(opts).map(x=>`<label class="option"><input type="radio" name="${esc(id)}" value="${esc(x)}" required><span>${esc(x)}</span></label>`).join('')}</fieldset>`;}
+function lessonResult(passed,message){
+ const existing=document.querySelector('#lesson-result');existing?.remove();
+ const dialog=document.createElement('dialog');dialog.id='lesson-result';dialog.setAttribute('aria-label',passed?'Ders başarıyla tamamlandı':'Ders tamamlanamadı');
+ dialog.style.cssText='border:0;border-radius:20px;padding:28px;max-width:min(90vw,380px);width:100%;text-align:center;box-shadow:0 20px 65px #0003;color:#153951';
+ dialog.innerHTML='<h2 style="margin:0 0 12px">'+(passed?'🎉 Tebrikler!':'Bir kez daha dene')+'</h2><p style="margin:0 0 24px">'+esc(message)+'</p><button class="primary wide" type="button" id="lesson-result-close">'+(passed?'Devam et':'Tekrar dene')+'</button>';
+ root.append(dialog);dialog.showModal();
+ dialog.querySelector('button').addEventListener('click',()=>{dialog.close();dialog.remove();if(!passed){const form=document.querySelector('#module-form');form?.reset();form?.querySelector('input')?.focus();}else window.scrollTo(0,0);});
+ dialog.addEventListener('cancel',e=>{e.preventDefault();dialog.querySelector('button').click();});
+}
 function renderModule(){root.innerHTML=`<article class="card"><div class="eyebrow">${esc(levelName(lesson.level))} · Ders ${esc(lesson.module_no)}</div><h1>${esc(lesson.title)}</h1><p class="muted">${esc(lesson.benefit)}</p><div class="content">${esc(lesson.content)}</div></article><section class="card"><h2>Kendini dene</h2><form id="module-form">${question('answer1',lesson.question1,lesson.options1)}${question('answer2',lesson.question2,lesson.options2)}<button class="primary actions">Yanıtları kontrol et</button></form></section>`;}
 function renderPlacementResult(){
  const u=state.profile,complete=reachedGoal(u);
@@ -159,8 +168,8 @@ root.addEventListener('submit',event=>{event.preventDefault();const form=event.t
    if(exam.kind==='placement'){await api('enroll',{...exam.profile,exam_id:exam.exam_id,answers:values});page='placement-result';await reload();window.scrollTo(0,0);}
    else{const r=await api('submit_level',{exam_id:exam.exam_id,answers:values});page='home';await reload();notify(`${r.correct}/${r.total} doğru. ${r.passed?(reachedGoal(state.profile)?'Hedefine ulaştın!':`Yeni seviyen: ${levelName(r.level)}`):'Tekrar deneyebilirsin.'}`);}
   }else if(form.id==='module-form'){
-   const r=await api('complete_module',{id:lesson.id,...values});if(!r.passed){notify('Yanıtlarını tekrar gözden geçir.');return;}
-   page='home';await reload();notify(r.already_completed?'Bu dersi daha önce tamamlamıştın.':`Ders tamamlandı. ${r.points} puan kazandın!`);window.scrollTo(0,0);
+   const r=await api('complete_module',{id:lesson.id,...values});if(!r.passed){lessonResult(false,'Yanıtların henüz doğru değil. Beklemeden tekrar deneyebilirsin.');return;}
+   page='home';await reload();lessonResult(true,r.already_completed?'Bu dersi daha önce tamamlamıştın.':`Dersi tamamladın ve ${r.points} puan kazandın!`);
   }else if(form.id==='profile-form'){await api('profile',values);await reload();notify('Profilin kaydedildi.');}
   else if(form.id==='delete-form'){await api('delete_profile',values);await detachPush();await client.auth.signOut({scope:'local'});session=null;state=null;auth('signup','YZ101 profilin silindi. Yeniden başlamak için e-posta ve şifreni yaz. NoWord hesabın varsa mevcut şifreni kullan.');}
  },form);
