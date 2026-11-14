@@ -7,7 +7,16 @@ let serverOffset=0,countdownTimer=null;
 let session=null,state=null,page='home',exam=null,lesson=null,reading=null,recovery=recoveryRequested,noticeTimer,working=false;
 const goals=['Anlamak','Kullanmak','Üretmek'];
 const goalSelect=v=>`<label>Hedef<select name="goal">${goals.map(x=>`<option ${v===x?'selected':''}>${x}</option>`).join('')}</select></label>`;
-function notify(message){const el=document.querySelector('#notice');el.textContent=message;el.hidden=false;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>{el.hidden=true},8000);}
+function notify(message){showResultDialog('Bilgilendirme',message,'Tamam');}
+function showResultDialog(title,message,buttonLabel='Tamam'){
+ document.querySelector('#app-dialog')?.remove();
+ const d=document.createElement('dialog');d.id='app-dialog';d.className='app-result-dialog';
+ d.innerHTML='<h2>'+esc(title)+'</h2><p>'+esc(message)+'</p><button class="primary wide" type="button">'+esc(buttonLabel)+'</button>';
+ document.body.append(d);d.showModal();
+ const close=()=>{d.close();d.remove();};
+ d.querySelector('button').addEventListener('click',close);
+ d.addEventListener('cancel',e=>{e.preventDefault();close();});
+}
 function failure(e){let message=e?.message||'İşlem tamamlanamadı. Tekrar deneyin.';if(/invalid login credentials/i.test(message))message='E-posta veya şifre hatalı.';if(/email not confirmed/i.test(message))message='Önce e-postanızdaki doğrulama bağlantısını açın.';if(/unique|duplicate key/i.test(message))message='Bu kullanıcı adı kullanılıyor. Başka bir ad seçin.';if(/fetch|network/i.test(message))message='Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.';notify(message);}
 async function detachPush(){try{if(!('serviceWorker' in navigator))return;const r=await navigator.serviceWorker.getRegistration('/yz101/');const s=await r?.pushManager.getSubscription();if(s){await client.rpc('nora_push',{p_action:'remove_device',p_data:{endpoint:s.endpoint}});await s.unsubscribe();}}catch{}}
 async function api(action,data={}){const {data:result,error}=await client.rpc('yz101_api',{p_action:action,p_data:data});if(error)throw error;return result;}
@@ -157,7 +166,7 @@ root.addEventListener('submit',event=>{event.preventDefault();const form=event.t
    }else response=await client.auth.signInWithPassword(credentials);
    if(response.error)throw response.error;
    if(!response.data.session){root.innerHTML='<section class="card auth"><h1>Kaydına devam et</h1><p>İlk kez kayıt oluyorsan e-postandaki doğrulama bağlantısını aç. Gelen kutunu ve spam klasörünü kontrol et.</p><p>NoWord hesabın varsa veya yalnız YZ101 profilini sildiysen yeni doğrulama e-postası gelmez. Mevcut şifrenle giriş yaparak devam et.</p><button class="primary wide" data-action="login">Giriş yap</button><button class="text actions" data-action="forgot">Şifremi unuttum</button></section>';return;}
-   session=response.data.session;page='home';await reload();if(state.profile)notify(`Merhaba ${state.profile.username}. Bugün küçük bir adım daha.`);
+   session=response.data.session;page='home';await reload();
   }else if(form.id==='reset-form'){
    if(values.password!==values.repeat)throw Error('Şifreler eşleşmiyor.');
    const {error}=await client.auth.updateUser({password:values.password});if(error)throw error;
@@ -167,7 +176,7 @@ root.addEventListener('submit',event=>{event.preventDefault();const form=event.t
    else{await api('enroll',values);page='home';await reload();notify('YZ101 profilin hazır.');}
   }else if(form.id==='exam-form'){
    if(exam.kind==='placement'){await api('enroll',{...exam.profile,exam_id:exam.exam_id,answers:values});page='placement-result';await reload();window.scrollTo(0,0);}
-   else{const r=await api('submit_level',{exam_id:exam.exam_id,answers:values});page='home';await reload();notify(`${r.correct}/${r.total} doğru. ${r.passed?(reachedGoal(state.profile)?'Hedefine ulaştın!':`Yeni seviyen: ${levelName(r.level)}`):'Tekrar deneyebilirsin.'}`);}
+   else{const r=await api('submit_level',{exam_id:exam.exam_id,answers:values});page='home';await reload();showResultDialog(r.passed?'Tebrikler!':'Henüz geçemedin',`${r.correct}/${r.total} doğru. ${r.passed?(reachedGoal(state.profile)?'Hedefine ulaştın!':`Yeni seviyen: ${levelName(r.level)}`):'Sınavı yeniden deneyebilirsin.'}`,r.passed?'Devam et':'Tamam');}
   }else if(form.id==='module-form'){
    const r=await api('complete_module',{id:lesson.id,...values});if(!r.passed){lessonResult(false,'Yanıtların henüz doğru değil. Beklemeden tekrar deneyebilirsin.');return;}
    page='home';await reload();lessonResult(true,r.already_completed?'Bu dersi daha önce tamamlamıştın.':`Dersi tamamladın ve ${r.points} puan kazandın!`);
