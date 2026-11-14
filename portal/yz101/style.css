@@ -47,3 +47,9 @@ body[data-page=home] .daily-card .daily-label{margin-bottom:0}
 body[data-page=home] .daily-card .countdown{margin-top:0}
 body[data-page=home] .daily-card .muted{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;line-height:1.45}
 @media(max-height:700px){body[data-page=home] .daily-card{min-height:0;padding:16px 20px;gap:8px}}
+
+
+/* Match the home journey-to-cards gap with the lower page spacing */
+body[data-page=home] .journey-summary{margin-bottom:24px}
+body[data-page=home] .daily-grid{margin-bottom:24px}
+.news-article .news-read-button{background:#15803d;margin-top:24px}
