@@ -209,7 +209,7 @@ async function yz101GradeSmokeTest(){
   const results=[];
   for(const [task,expected,answer] of tests){
    out.textContent='Çalışıyor: '+task+'\n'+JSON.stringify(results,null,2);
-   try{const {data,error}=await client.functions.invoke('yz101-grade-answer',{body:{task_id:task,answer}});results.push({task,expected,data,error:error?.message||null})}
+   try{const {data,error}=await client.functions.invoke('yz101-grade-answer',{body:{task_id:task,answer:answer+' Bu değerlendirme, sistem bağlantısının doğrulama testidir.'}});results.push({task,expected,data,error:error?.message||null})}
    catch(e){results.push({task,error:String(e)})}
   }
   out.textContent=JSON.stringify(results,null,2);
