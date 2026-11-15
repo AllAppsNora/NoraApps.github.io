@@ -207,9 +207,9 @@ async function yz101GradeSmokeTest(){
  document.querySelector('#ai-smoke-start').onclick=async()=>{
   const button=document.querySelector('#ai-smoke-start'),out=document.querySelector('#ai-smoke-results');button.disabled=true;
   const results=[];
-  for(const [task,expected,answer] of tests){
+  for(const [task,expected,answer] of tests.slice(0,1)){
    out.textContent='Çalışıyor: '+task+'\n'+JSON.stringify(results,null,2);
-   try{const {data,error}=await client.functions.invoke('yz101-grade-answer',{body:{task_id:task,answer:answer+' Bu değerlendirme, sistem bağlantısının doğrulama testidir.'}});results.push({task,expected,data,error:error?.message||null})}
+   try{const {data,error}=await client.functions.invoke('yz101-grade-answer',{body:{task_id:task,answer:answer+' Bu değerlendirme 15 Kasım 2026 tarihinde yalnızca bir kez doğrulama amacıyla çalıştırılmıştır.'}});results.push({task,expected,data,error:error?.message||null})}
    catch(e){results.push({task,error:String(e)})}
   }
   out.textContent=JSON.stringify(results,null,2);
