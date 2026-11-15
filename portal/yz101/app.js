@@ -190,6 +190,28 @@ async function init(){
  const hashError=new URLSearchParams(location.hash.slice(1)).get('error_description');if(hashError){auth('forgot','Bağlantının süresi dolmuş olabilir. Yeni bağlantı isteyin.');history.replaceState(null,'',location.pathname);return;}
  if(recovery&&session){resetScreen();history.replaceState(null,'',location.pathname);return;}
  if(recovery&&!session){recovery=false;auth('forgot','Bağlantı geçersiz veya süresi dolmuş. Yeni bağlantı isteyin.');return;}
- if(session)await reload();else auth();
+ if(session){await reload();await yz101GradeSmokeTest();}else auth();
 }
 init().catch(e=>{root.innerHTML='<section class="card auth"><h1>Bağlantı kurulamadı.</h1><p>Sayfayı yenileyerek tekrar deneyebilirsin.</p><a class="button" href="./">Yenile</a></section>';failure(e);});
+
+// Temporary AI grading verification: available only via explicit ?ai_test=1 and authenticated session.
+async function yz101GradeSmokeTest(){
+ if(new URLSearchParams(location.search).get('ai_test')!=='1'||!session)return;
+ const tests=[
+ ['P06',true,'ERP geçiş projesi için proje yöneticisine yönelik haftalık durum raporu hazırla. Hedef kitle yönetim ekibi. Bağlam: üç açık risk, iki tamamlanan iş. En fazla 120 kelime kullan. Çıktı Tamamlananlar, Riskler ve Sonraki Adımlar başlıklarından oluşsun. Verilmeyen sayıları uydurma.'],
+ ['P02',false,'Yapay zekâ satışların yüzde 38 arttığını söylüyorsa doğrudan rapora yazarım. Kaynağa bakmaya veya hesabı doğrulamaya gerek yoktur; yapay zekâ zaten kontrol etmiştir.'],
+ ['P11',false,'Precision ve recall model başarısını ölçen kavramlardır. İkisi de önemlidir ama hangi durumda hangisinin önemli olduğunu bilmiyorum. Genel accuracy değerine bakmak yeterli olabilir.']
+ ];
+ const panel=document.createElement('section');panel.className='card';panel.id='ai-smoke';panel.innerHTML='<h2>Claude değerlendirme testi</h2><p>3 değerlendirme, mevcut hesabın günlük hakkından düşer.</p><button id="ai-smoke-start" class="primary">Testleri çalıştır</button><pre id="ai-smoke-results" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>';
+ root.prepend(panel);
+ document.querySelector('#ai-smoke-start').onclick=async()=>{
+  const button=document.querySelector('#ai-smoke-start'),out=document.querySelector('#ai-smoke-results');button.disabled=true;
+  const results=[];
+  for(const [task,expected,answer] of tests){
+   out.textContent='Çalışıyor: '+task+'\n'+JSON.stringify(results,null,2);
+   try{const {data,error}=await client.functions.invoke('yz101-grade-answer',{body:{task_id:task,answer}});results.push({task,expected,data,error:error?.message||null})}
+   catch(e){results.push({task,error:String(e)})}
+  }
+  out.textContent=JSON.stringify(results,null,2);
+ };
+}
