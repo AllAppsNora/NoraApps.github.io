@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
+const html=fs.readFileSync(new URL('../portal/yz101/index.html',import.meta.url),'utf8');
+const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+let dialog,opened=0;const output={textContent:''};const nodes={'#lesson':{prepend:()=>{},scrollIntoView:()=>{}},'#lesson-outcome':output,'#lessonList':{scrollIntoView:()=>{}}};
+const document={querySelector:s=>nodes[s]??null,body:{append:x=>dialog=x},createElement:tag=>tag==='dialog'?{setAttribute(){},querySelector(s){return this[s]??=( {})},close(){this.onclose?.()},remove(){dialog=null},showModal(){}}:{setAttribute(){}}};
+const ctx=vm.createContext({document});vm.runInContext(script.slice(0,script.indexOf('function renderFilters')),ctx);
+vm.runInContext('keepDraft=()=>{};renderList=()=>{};renderLesson=()=>{};',ctx);
+vm.runInContext('goToLesson(1)',ctx);assert.ok(dialog.innerHTML.includes('açık uçlu yanıtın AI değerlendirmesi'));assert.equal(vm.runInContext('current',ctx),0);dialog['#stay'].onclick();assert.equal(dialog,null);
+vm.runInContext('goToLesson(1)',ctx);dialog['#leave'].onclick();assert.equal(vm.runInContext('current',ctx),1);
+vm.runInContext('pendingOperations=1;goToLesson(2)',ctx);assert.equal(vm.runInContext('current',ctx),1);assert.ok(output.textContent.includes('kayıt sürüyor'));
+vm.runInContext("pendingOperations=0;results.P02={completed:true};goToLesson(2)",ctx);assert.equal(vm.runInContext('current',ctx),2);assert.equal(dialog,null);
+vm.runInContext("current=14;results.P15={completed:true};goToLesson(15)",ctx);assert.equal(vm.runInContext('current',ctx),14);assert.ok(output.textContent.includes('Son derse geldin'));
+assert.ok(!html.includes('Öğrendiklerini kontrol et'));console.log('PASS: incomplete warning/cancel/continue; pending saves block navigation; complete transition; final lesson does not wrap; repetitive checklist removed.');
