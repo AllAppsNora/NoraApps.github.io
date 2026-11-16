@@ -34,7 +34,7 @@ Deno.serve(async req=>{
     const sentences=feedback.feedback.match(/[^.!?]+[.!?]+/g);
     feedback={...feedback,feedback:sentences?.join("").trim()||"Bu değerlendirmenin açıklaması eksik kaydedilmiş. Yanıtını düzenleyip tekrar değerlendirebilirsin."};
    }
-   return reply({status:reservation.status,feedback});
+   return reply({status:reservation.status,feedback,access:reservation.access});
   }
   // Only the newly reserved request may call Anthropic. Existing pending reservations return no rubric.
   if(!reservation.rubric)return reply({status:"processing"},202);
@@ -51,8 +51,8 @@ Deno.serve(async req=>{
    if(typeof parsed.passed!=="boolean"||typeof parsed.feedback!=="string")throw Error("Invalid grader output");
    const feedback={passed:parsed.passed,feedback:parsed.feedback.trim()};
 
-   await control("finish",{p_id:id,p_payload:{ok:true,cost_usd:cost,input_tokens:input,output_tokens:output,feedback}});
-   return reply({status:"evaluated",feedback});
+   const finished=await control("finish",{p_id:id,p_payload:{ok:true,cost_usd:cost,input_tokens:input,output_tokens:output,feedback}});
+   return reply({status:"evaluated",feedback,access:finished.access});
   }catch(e){
    await control("finish",{p_id:id,p_payload:{ok:false}}).catch(()=>{});
    console.error("YZ101 grading failed",String(e).slice(0,150));

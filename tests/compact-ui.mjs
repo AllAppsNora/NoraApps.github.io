@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {createRequire} from 'node:module';
+const require=createRequire(process.env.JSDOM_PACKAGE||import.meta.url);
+const {JSDOM}=require('jsdom');
+const root=new URL('../portal/yz101/',import.meta.url);
+const dom=new JSDOM(fs.readFileSync(new URL('index.html',root),'utf8'),{url:'https://noraapps.web.app/yz101/',runScripts:'outside-only'});
+const w=dom.window;w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.onclose?.()};
+let session={user:{id:'fixture'}},rows=[],failures=0,until=null,reason=null,aiCalls=0,testCalls=0,transportFail=false,seen=[];
+const state=()=>({progress:rows,access:{premium:false,failures,attempts_remaining:2-failures,cooldown_until:until,reason,server_now:new Date().toISOString()}});
+const client={auth:{getSession:async()=>({data:{session}}),onAuthStateChange:()=>{},signOut:async()=>{session=null;return {}},signInWithPassword:async()=>({}),signUp:async()=>({})},rpc:async(name,args)=>{if(name==='yz101_lesson_state')return {data:state()};assert.equal(name,'yz101_lesson_test');testCalls++;seen.push(args.p_request);if(transportFail){transportFail=false;return {error:Error('network')}}failures++;if(failures===2){until=new Date(Date.now()+86400000).toISOString();reason='retry'}return {data:{status:'evaluated',passed:false,answers:[false,true,true],numeric_passed:true,access:state().access}}},functions:{invoke:async()=>{aiCalls++;rows=[{task_id:'P01',ai_passed:true,completed:false}];return {data:{status:'evaluated',feedback:{passed:true,feedback:'İşleri gerekçeleriyle ayırmışsın.'},access:state().access}}}}};
+w.supabase={createClient:()=>client};
+w.eval(['lessons.js','pilot.js'].map(file=>fs.readFileSync(new URL(file,root),'utf8')).join('\n')+'\nwindow.testLessons=LESSONS;');
+const flush=()=>new Promise(r=>setTimeout(r,0));const q=s=>w.document.querySelector(s);
+await flush();assert.equal(q('#auth-screen').hidden,true);assert.equal(q('#home [data-open="0"]').disabled,false);
+q('#home [data-open="0"]').click();assert.match(q('#lesson').textContent,/Yaygın hata/);assert.equal(q('#response'),null);q('#learned').click();
+assert.ok(q('.hint').compareDocumentPosition(q('#response'))&w.Node.DOCUMENT_POSITION_FOLLOWING);
+assert.equal(q('#ai-check').textContent,'Kontrol et');assert.match(q('.field-info').textContent,/40–1600/);
+q('#response').value='Bir iş kuralla, ikinci iş AI ile, üçüncü iş insan kararıyla yapılır. Gerekçeleri burada.';q('#ai-check').click();assert.match(q('#ai-feedback').textContent,/Kontrol ediliyor/);await flush();assert.equal(aiCalls,1);assert.match(q('#ai-feedback').textContent,/Başarılı/);
+q('#to-test').click();assert.equal(q('#test-submit').textContent,'Testi tamamla');
+function answer(){for(let i=0;i<3;i++)q(`input[name="q${i}"][value="0"]`).checked=true;q('#quiz-form').dispatchEvent(new w.Event('submit',{cancelable:true}));}
+transportFail=true;answer();await flush();assert.match(q('#notice').textContent,/Sonuç alınamadı/);answer();await flush();assert.equal(seen[0],seen[1],'Transport retry uses same id');assert.equal(q('#result-title').textContent,'Testi geçemedin');assert.equal(q('#result-action').textContent,'Tekrar dene');assert.equal(q('#result-body').querySelectorAll('.result-row').length,3);assert.equal(q('#result-body').querySelectorAll('.fail').length,1);assert.equal(q('#result-body').querySelectorAll('.pass').length,2);assert.doesNotMatch(q('#result-body').textContent,/doğru cevap|açıklama/i);
+q('#result-action').click();answer();await flush();assert.equal(q('#result-action').textContent,'Derslere dön');assert.match(q('#result-body').textContent,/Tekrar denemek için kalan süre/);assert.notEqual(seen[1],seen[2]);q('#result-action').click();assert.equal(q('#home [data-open="0"]').disabled,true);
+const lessons=w.testLessons;assert.equal(new Set(lessons.map(l=>l.pitfall)).size,15);assert.equal(lessons.flatMap(l=>l.questions).length,45);assert.equal(lessons.filter(l=>l.numericExercise).length,4);assert.ok(lessons.every(l=>l.questions.every(q=>q.correct===undefined&&q.explanation===undefined)));
+assert.doesNotMatch(w.document.body.textContent,/Çalışmamı kopyala|Önceki ders|Sonraki ders|Claude değerlendiriyor|Ders henüz tamamlanmadı|Uygulama için değerlendirme ölçütü/);
+dom.window.close();console.log('PASS: compact stages, hints, AI status, result popup, no answers revealed, idempotent transport retry, cooldown, 15 unique warnings.');
