@@ -53,6 +53,11 @@ begin
   r:=public.yz101_lesson_test(k.task_id,k.quiz_answers,k.numeric_value,gen_random_uuid());assert r->>'passed'='true' or r->>'status'='already_completed','All keys pass';
  end loop;
  assert (select count(*) from yz101.pilot_progress where user_id=u and completed)=15,'All lessons complete';
+ update yz101.pilot_progress set ai_passed=false where user_id=u and task_id='P15';
+ insert into yz101.ai_evaluation_requests(user_id,task_id,response_hash,status,reserved_usd,feedback) values(u,'P15',repeat('c',64),'completed',.005,'{"passed":true,"feedback":"Başarılı."}');
+ r:=public.yz101_ai_evaluation_control('reserve',u,'P15',repeat('d',64));
+ assert r->>'status'='completed','Successful cache reused';
+ assert (select ai_passed from yz101.pilot_progress where user_id=u and task_id='P15'),'Cached success repairs progress';
  assert not has_table_privilege('authenticated','yz101.lesson_access','UPDATE'),'Counter protected';
  assert not has_table_privilege('authenticated','yz101.users','UPDATE'),'Premium protected';
  assert not has_function_privilege('anon','public.yz101_lesson_test(text,integer[],numeric,uuid)','EXECUTE'),'Auth required';
