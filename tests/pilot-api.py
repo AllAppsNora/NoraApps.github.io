@@ -1,8 +1,9 @@
 """Live API regression checks. Requires private fixture credentials, never real user accounts."""
-import json,sys,urllib.request,urllib.error
+import json,re,sys,urllib.request,urllib.error
 from pathlib import Path
 accounts=json.loads(Path(sys.argv[1]).read_text())
-lessons=json.loads(Path('/tmp/yz-lessons.json').read_text())
+source=(Path(__file__).resolve().parents[1]/'portal/yz101/index.html').read_text()
+lessons=json.loads(re.search(r'const LESSONS=(.*?);\s*const ',source,re.S)[1])
 BASE='https://gjztdlihsfmozxcgdwke.supabase.co'
 KEY='sb_publishable_tDQAKMpHaorQAplXqg5Nqg_zwOImZeT'
 def call(path,body,token=None):
