@@ -5,9 +5,10 @@ let dialog,opened=0;const output={textContent:''};const nodes={'#lesson':{prepen
 const document={querySelector:s=>nodes[s]??null,body:{append:x=>dialog=x},createElement:tag=>tag==='dialog'?{setAttribute(){},querySelector(s){return this[s]??=( {})},close(){this.onclose?.()},remove(){dialog=null},showModal(){}}:{setAttribute(){}}};
 const ctx=vm.createContext({document});vm.runInContext(script.slice(0,script.indexOf('function renderFilters')),ctx);
 vm.runInContext('keepDraft=()=>{};renderList=()=>{};renderLesson=()=>{};',ctx);
-vm.runInContext('goToLesson(1)',ctx);assert.ok(dialog.innerHTML.includes('açık uçlu yanıtın AI değerlendirmesi'));assert.equal(vm.runInContext('current',ctx),0);dialog['#stay'].onclick();assert.equal(dialog,null);
-vm.runInContext('goToLesson(1)',ctx);dialog['#leave'].onclick();assert.equal(vm.runInContext('current',ctx),1);
+vm.runInContext('goToLesson(1)',ctx);assert.ok(dialog.innerHTML.includes('açık uçlu yanıtın AI değerlendirmesi'));assert.ok(!dialog.innerHTML.includes('Yine de geç'));assert.equal(vm.runInContext('current',ctx),0);dialog['#stay'].onclick();assert.equal(dialog,null);
+vm.runInContext('goToLesson(10)',ctx);assert.ok(dialog.innerHTML.includes('P01'));assert.equal(vm.runInContext('current',ctx),0);dialog['#stay'].onclick();
+vm.runInContext("results.P01={completed:true};goToLesson(1)",ctx);assert.equal(vm.runInContext('current',ctx),1);assert.equal(dialog,null);
 vm.runInContext('pendingOperations=1;goToLesson(2)',ctx);assert.equal(vm.runInContext('current',ctx),1);assert.ok(output.textContent.includes('kayıt sürüyor'));
-vm.runInContext("pendingOperations=0;results.P02={completed:true};goToLesson(2)",ctx);assert.equal(vm.runInContext('current',ctx),2);assert.equal(dialog,null);
-vm.runInContext("current=14;results.P15={completed:true};goToLesson(15)",ctx);assert.equal(vm.runInContext('current',ctx),14);assert.ok(output.textContent.includes('Son derse geldin'));
-assert.ok(!html.includes('Öğrendiklerini kontrol et'));console.log('PASS: incomplete warning/cancel/continue; pending saves block navigation; complete transition; final lesson does not wrap; repetitive checklist removed.');
+vm.runInContext("pendingOperations=0;goToLesson(0)",ctx);assert.equal(vm.runInContext('current',ctx),0);
+vm.runInContext("for(const l of LESSONS)results[l.id]={completed:true};current=14;goToLesson(15)",ctx);assert.equal(vm.runInContext('current',ctx),14);assert.ok(output.textContent.includes('15 dersin tamamını'));
+assert.ok(!html.includes('Yine de geç'));console.log('PASS: next and menu skipping blocked; completed lesson unlocks next; review allowed; pending save and final lesson checked.');

@@ -44,10 +44,10 @@ function goToLesson(target){
   if(target>=NUM){document.querySelector('#lesson-outcome').textContent=Object.values(results).filter(x=>x.completed).length===NUM?'15 dersin tamamını bitirdin. İlerlemen hesabına kaydedildi.':`Son derse geldin. ${Object.values(results).filter(x=>x.completed).length}/15 ders tamamlandı. Eksik dersleri listeden seçebilirsin.`;document.querySelector('#lessonList').scrollIntoView({behavior:'smooth'});return;}
   current=target;renderList();renderLesson();const notice=document.createElement('p');notice.className='feedback';notice.setAttribute('role','status');notice.textContent=`${previous.id}: ${r.completed?'tamamlandı, ilerlemen kaydedildi.':'henüz tamamlanmadı.'} ${LESSONS[current].id} · ${LESSONS[current].title} açıldı.`;lessonNode.prepend(notice);lessonNode.scrollIntoView({behavior:'smooth',block:'start'});
  };
- const d=drafts[previous.id];const started=r.quiz_passed||r.ai_passed||r.numeric_passed||d?.answer?.trim()||d?.answers?.some(v=>v!==undefined)||d?.numeric;
- if(!r.completed&&(started||target===current+1)){
-  const dialog=document.createElement('dialog');dialog.setAttribute('aria-labelledby','leave-title');dialog.innerHTML=`<h2 id="leave-title">Bu ders henüz tamamlanmadı</h2><p>Kalan adımlar: ${E(missingSteps(previous).join(', '))}.</p><p>Geçersen bu ders tamamlandı sayılmaz. Yazdığın yanıt bu sekmede korunur; sayfayı yenilersen taslak kaybolur.</p><div class="row"><button type="button" id="stay">Derse dön</button><button type="button" class="secondary" id="leave">Yine de geç</button></div>`;
-  document.body.append(dialog);dialog.querySelector('#stay').onclick=()=>dialog.close();dialog.querySelector('#leave').onclick=()=>{dialog.close();open()};dialog.onclose=()=>dialog.remove();dialog.showModal();
+ const blocker=LESSONS.slice(0,Math.min(target,NUM)).find(l=>!results[l.id]?.completed);
+ if(blocker){
+  const dialog=document.createElement('dialog');dialog.setAttribute('aria-labelledby','leave-title');dialog.innerHTML=`<h2 id="leave-title">Önce ${E(blocker.id)} dersini tamamla</h2><p>Kalan adımlar: ${E(missingSteps(blocker).join(', '))}.</p><div class="row"><button type="button" id="stay">Derse dön</button></div>`;
+  document.body.append(dialog);dialog.querySelector('#stay').onclick=()=>{dialog.close();const index=LESSONS.indexOf(blocker);if(index!==current){current=index;renderList();renderLesson();lessonNode.scrollIntoView({behavior:'smooth',block:'start'})}};dialog.onclose=()=>dialog.remove();dialog.showModal();
  }else open();
 }
 
@@ -57,7 +57,7 @@ function renderFilters(){
 }
 function renderList(){
  document.querySelector('#lessonList').innerHTML=LESSONS.map((l,i)=>({...l,i})).filter(l=>filter==='Tümü'||l.level===filter)
- .map(l=>`<button type="button" data-lesson="${l.i}" class="${current===l.i?'active':''}">${l.id} · ${E(l.title)} ${results[l.id]?.completed?'✓':''}</button>`).join('');
+ .map(l=>`<button type="button" data-lesson="${l.i}" class="${current===l.i?'active':''}">${l.id} · ${E(l.title)} ${results[l.id]?.completed?'✓':LESSONS.slice(0,l.i).some(x=>!results[x.id]?.completed)?'🔒':''}</button>`).join('');
  document.querySelectorAll('[data-lesson]').forEach(b=>b.onclick=()=>{goToLesson(Number(b.dataset.lesson))});
 }
 function renderLesson(){
