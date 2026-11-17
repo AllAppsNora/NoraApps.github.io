@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';import {createRequire} from 'node:module';
+const {JSDOM}=createRequire(process.env.JSDOM_PACKAGE)('jsdom');
+const dom=new JSDOM('<body></body>',{url:'https://noraapps.web.app/yz101/',runScripts:'outside-only'}),w=dom.window;
+w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLMediaElement.prototype.pause=function(){};w.HTMLMediaElement.prototype.play=async function(){};
+w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};
+let user={id:'premium'},calls=[];let resolve;
+const client={functions:{invoke:async(name,{body})=>{calls.push(body);if(body.message==='pending')return new Promise(r=>resolve=r);return {data:body.action==='voice'?{status:'ready',audio:'SUQzYWJjZGVmZ2hpamtsbW5vcA=='}:{status:'ready',id:'11111111-1111-4111-a111-111111111111',text:'Duygu analizi uygun. Yanlış yorumlamayı nasıl fark edersin?'}};}}};
+w.eval(fs.readFileSync(new URL('../portal/yz101/mentor.js',import.meta.url),'utf8'));
+const mentor=w.createYZ101Mentor({client,getUser:()=>user});const flush=()=>new Promise(r=>setTimeout(r,0)),q=s=>w.document.querySelector(s);
+mentor.open({task_id:'P01',answer:'a'.repeat(40)});await flush();assert.match(q('#mentor-explanation').textContent,/Duygu analizi/);assert.equal(q('#mentor-question').maxLength,500);
+q('#mentor-listen').click();await flush();assert.equal(q('audio').hidden,false);assert.equal(calls.filter(c=>c.action==='voice').length,1);
+q('audio').dispatchEvent(new w.Event('play'));assert.equal(calls.length,2);
+q('#mentor-question').value='pending';q('#mentor-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await flush();mentor.close();user={id:'other'};resolve({data:{status:'ready',text:'Private response'}});await flush();assert.equal(q('dialog'),null);
+dom.window.close();console.log('PASS: mentor explanation, 500-character input, audio playback/replay, close and cross-account stale-response isolation.');
