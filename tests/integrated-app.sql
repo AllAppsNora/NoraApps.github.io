@@ -1,0 +1,33 @@
+begin;
+select set_config('request.jwt.claim.sub','d542bfb1-a8be-466a-93ff-9f2577e49017',true);
+do $$
+declare u uuid:='d542bfb1-a8be-466a-93ff-9f2577e49017'; r jsonb; n uuid; older uuid; before_level text; rejected boolean:=false; nickname text:='qa_integration_'||substr(gen_random_uuid()::text,1,8);
+begin
+ r:=public.yz101_app('state');assert r->'profile'='null'::jsonb,'No automatic profile overwrite';
+ r:=public.yz101_app('enroll',jsonb_build_object('username',nickname,'goal','Kullanmak','level','C2','is_premium',true));
+ assert r->>'level'='A1' and r->>'is_premium'='false','Client cannot set level or premium';
+ insert into yz101.pilot_progress(user_id,task_id,ai_passed,quiz_passed,numeric_passed,completed) values(u,'P01',true,true,true,true);
+ r:=public.yz101_app('state');assert r->>'points'='100' and r->>'lesson_points'='100','Lesson points included';
+ r:=public.yz101_app('profile',jsonb_build_object('username',nickname||'_new','goal','Üretmek','level','C2','user_id','48f97d23-c2e6-4b5d-8e15-2cfcd6ad15b8'));
+ assert r->>'id'=u::text and r->>'goal'='Üretmek' and r->>'level'='A1','Own profile only and level retained';
+ select id into n from yz101.news where publish_date=(now() at time zone 'Europe/Istanbul')::date and source_url is not null limit 1;
+ if n is null then insert into yz101.news(title,summary,full_text,publish_date,source_url) values('QA story','Short summary','Complete fixture text',(now() at time zone 'Europe/Istanbul')::date,'https://example.com/qa/'||gen_random_uuid()) returning id into n; end if;
+ insert into yz101.news(title,summary,publish_date) values('QA prior story','Fixture',(now() at time zone 'Europe/Istanbul')::date-1) returning id into older;
+ insert into yz101.user_news_points(user_id,news_id,points,read_at) values(u,older,10,now());
+ begin perform public.yz101_app('read_news',jsonb_build_object('id',n));exception when others then rejected:=sqlerrm like '%24 saat%';end;
+ assert rejected,'News rolling cooldown enforced';
+ update yz101.user_news_points set read_at=now()-interval '25 hours' where user_id=u and news_id=older;
+ r:=public.yz101_app('read_news',jsonb_build_object('id',n));assert r->>'points'='10','News earns 10';
+ r:=public.yz101_app('read_news',jsonb_build_object('id',n));assert r->>'points'='0' and r->>'already_read'='true','News idempotent';
+ r:=public.yz101_app('state');assert r->>'points'='110' and r->>'lesson_points'='100' and r->>'news_points'='10','Combined total';
+ assert r->'news'->0 ? 'full_text','Full article field returned';
+ assert (r->>'news_unlock_at')::timestamptz=now()+interval '24 hours','News timer is rolling';
+ assert jsonb_array_length(r->'progress')=1,'Profile updates preserve progress';
+ r:=public.yz101_app('ranking','{"period":"all"}');assert not exists(select 1 from jsonb_array_elements(r) x where x->>'username'=nickname||'_new'),'Disabled QA account excluded from ranking';
+ assert not has_function_privilege('anon','public.yz101_app(text,jsonb)','EXECUTE'),'Login required';
+ assert not has_table_privilege('authenticated','yz101.scores','INSERT'),'Client cannot award points';
+ perform set_config('request.jwt.claim.sub','',true);
+ rejected:=false;begin perform public.yz101_app('state');exception when invalid_authorization_specification then rejected:=true;end;assert rejected,'No unauthenticated state';
+end $$;
+rollback;
+select 'PASS: profile ownership, preserved level/progress, combined points, news cooldown/idempotency/full text, ranking exclusion, authentication' result;
