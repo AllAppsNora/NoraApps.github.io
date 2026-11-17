@@ -14,7 +14,7 @@ window.createYZ101Mentor=function({client,getUser}){
    const {data,error}=await client.functions.invoke('yz101-mentor',{body:{action:'explain',...context,message:element('mentor-question').value.trim()}});
    if(!current(version))return;if(error){const detail=await error.context?.json?.().catch(()=>null);if(error.context?.status===401){element('mentor-status').textContent='Oturumun sona erdi. Yeniden giriş yap.';return;}if(detail?.error==='invalid_input'){element('mentor-status').textContent='Sorunu kontrol edip tekrar gönder.';return;}throw error;}
    if(data.status!=='ready'){element('mentor-status').textContent=messages[data.status]||'Şu anda açıklama hazırlanamadı. Tekrar deneyebilirsin.';return;}
-   result=data;element('mentor-explanation').textContent=data.text;element('mentor-listen').hidden=false;element('mentor-status').textContent='';
+   result=data;element('mentor-question').value='';element('mentor-counter').textContent='0/500';element('mentor-explanation').textContent=data.text;element('mentor-listen').hidden=false;element('mentor-status').textContent='';
   }catch{if(current(version))element('mentor-status').textContent='Yanıt alınamadı. Tekrar dene.';}
   finally{if(current(version))setBusy(false);}
  }
