@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {extractArticle,validateSummary,summarizeToday,words,articleText} from '../supabase/functions/yz101-daily-news/summary.ts';
+assert.equal(extractArticle('<script type="application/ld+json">{"@graph":[{"articleBody":"Haber &amp; bilgi"}]}</script>'),'Haber & bilgi');
+assert.equal(extractArticle('<p>navigation only</p>'),'');
+assert.ok(extractArticle('<script type="application/ld+json">{"articleBody":"Kısa açıklama"}</script><article><p>Bu bir haber paragrafıdır ve elli karakterden çok daha uzundur.</p></article>').startsWith('Bu bir'));
+assert.ok(extractArticle('<article><p>Bu bir haber paragrafıdır ve elli karakterden çok daha uzundur.</p></article>').includes('haber'));
+const source=Array.from({length:180},(_,i)=>'kaynak'+i).join(' '),text=Array.from({length:120},(_,i)=>'özet'+i).join(' ')+'.';
+assert.equal(validateSummary(text,source,'end_turn'),120);assert.throws(()=>validateSummary(text,source,'max_tokens'));assert.throws(()=>validateSummary('kısa.',source,'end_turn'));assert.throws(()=>validateSummary(source.split(' ').slice(0,120).join(' ')+'.',source,'end_turn'));
+await assert.rejects(articleText('https://127.0.0.1/'));
+globalThis.Deno={env:{get:()=> 'test-key'}};let called=0;globalThis.fetch=async()=>{called++;return {ok:true,json:async()=>({content:[{type:'text',text}],stop_reason:'end_turn',usage:{input_tokens:400,output_tokens:240}})}};
+const calls=[];const rpc=async(a,d)=>{calls.push([a,d]);return a==='claim'?{run:true,id:'id',lease:'lease',url:'https://webrazzi.com/story',title:'Test'}:{status:'completed'}};
+const result=await summarizeToday(rpc,[{url:'https://webrazzi.com/story',source_text:source}]);assert.equal(result.status,'completed');assert.equal(called,1);assert.equal(words(calls[1][1].text),120);
+await summarizeToday(async()=>({run:false,status:'completed'}));assert.equal(called,1);
+console.log('PASS extraction, word bounds, truncation rejection, copying rejection, URL allowlist, one generation and completed-job cache.');
