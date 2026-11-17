@@ -8,7 +8,8 @@ export function parseMentorInput(data) {
   if(!/^[0-9a-f-]{36}$/i.test(data.id||''))throw Error('invalid_input');
   return {action:'voice',id:data.id};
  }
- if(!/^P(?:0[1-9]|1[0-5])$/.test(data.task_id||'') || typeof data.answer!=='string' || data.answer.trim().length<40 || data.answer.length>1600 || (data.message!==undefined&&typeof data.message!=='string') || (data.message||'').length>500)throw Error('invalid_input');
+ if(!/^P(?:0[1-9]|1[0-5])$/.test(data.task_id||'') || typeof data.answer!=='string' || data.answer.length>1600 || (data.message!==undefined&&typeof data.message!=='string') || (data.message||'').length>500)throw Error('invalid_input');
+ if(!data.answer.trim() && !(data.message||'').trim())throw Error('question_required');
  return {action:'explain',task_id:data.task_id,answer:data.answer.trim(),message:(data.message||'').trim()};
 }
 
