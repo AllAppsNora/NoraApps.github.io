@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import {extractArticle,validateSummary,summarizeToday,words,articleText} from '../supabase/functions/yz101-daily-news/summary.ts';
+import {normalizeSummary,extractArticle,validateSummary,summarizeToday,words,articleText} from '../supabase/functions/yz101-daily-news/summary.ts';
 assert.equal(extractArticle('<script type="application/ld+json">{"@graph":[{"articleBody":"Haber &amp; bilgi"}]}</script>'),'Haber & bilgi');
 assert.equal(extractArticle('<p>navigation only</p>'),'');
 assert.ok(extractArticle('<script type="application/ld+json">{"articleBody":"Kısa açıklama"}</script><article><p>Bu bir haber paragrafıdır ve elli karakterden çok daha uzundur.</p></article>').startsWith('Bu bir'));
 assert.ok(extractArticle('<article><p>Bu bir haber paragrafıdır ve elli karakterden çok daha uzundur.</p></article>').includes('haber'));
+assert.equal(normalizeSummary('# Gereksiz başlık\n\nAsıl özet.'),'Asıl özet.');
 const source=Array.from({length:180},(_,i)=>'kaynak'+i).join(' '),text=Array.from({length:120},(_,i)=>'özet'+i).join(' ')+'.';
 assert.equal(validateSummary(text,source,'end_turn'),120);assert.throws(()=>validateSummary(text,source,'max_tokens'));assert.throws(()=>validateSummary('kısa.',source,'end_turn'));assert.throws(()=>validateSummary(source.split(' ').slice(0,120).join(' ')+'.',source,'end_turn'));
 await assert.rejects(articleText('https://127.0.0.1/'));
