@@ -5,7 +5,7 @@ do $$
 declare u uuid:='d542bfb1-a8be-466a-93ff-9f2577e49017'; a jsonb; r jsonb; rid uuid; k yz101.pilot_answer_keys; wrong integer[]; reservation uuid;
 begin
  update yz101.users set is_premium=false where id=u;
- a:=public.yz101_lesson_state(); assert (a->'access'->>'failures')::int=0,'Fresh counter';
+ a:=public.yz101_lesson_state(); assert (a->'access'->>'failures')::int=0,'Fresh counter'; assert a->>'lesson_points'='0','No initial points';
  r:=public.yz101_lesson_test('P02',array[0,0,0],null,gen_random_uuid());assert r->>'status'='prerequisite','Sequence enforced';
  r:=public.yz101_lesson_test('P01',array[0,0,0],null,gen_random_uuid());assert r->>'status'='ai_required','AI required';
  insert into yz101.pilot_progress(user_id,task_id,ai_passed) values(u,'P01',true);
@@ -13,7 +13,7 @@ begin
  wrong:=array[(k.quiz_answers[1]+1)%4,k.quiz_answers[2],k.quiz_answers[3]];
  r:=public.yz101_lesson_test('P01',null,null,gen_random_uuid()); assert r->>'status'='incomplete','Incomplete no attempt';
  rid:=gen_random_uuid();r:=public.yz101_lesson_test('P01',wrong,null,rid);
- assert r->>'passed'='false' and r->>'correct_count'='2','Wrong answer graded';
+ assert r->>'passed'='false' and r->>'correct_count'='2','Wrong answer graded'; assert public.yz101_lesson_state()->>'lesson_points'='0','Failure earns no points';
  assert r->'access'->>'failures'='1' and r->'access'->>'cooldown_until' is null,'First failure retry';
  r:=public.yz101_lesson_test('P01',wrong,null,rid);assert r->'access'->>'failures'='1','Idempotent retry';
  r:=public.yz101_lesson_test('P01',wrong,null,gen_random_uuid());
@@ -23,6 +23,9 @@ begin
  update yz101.lesson_access set cooldown_until=now()-interval '1 second' where user_id=u;
  r:=public.yz101_lesson_state();assert r->'access'->>'failures'='0' and r->'access'->>'cycle'='1','Expiry resets';
  r:=public.yz101_lesson_test('P01',k.quiz_answers,null,gen_random_uuid());assert r->>'passed'='true' and r->'access'->>'reason'='success','Success starts wait';
+ assert public.yz101_lesson_state()->>'lesson_points'='100','Retry success earns 100';
+ r:=public.yz101_lesson_test('P01',k.quiz_answers,null,gen_random_uuid());
+ assert r->>'status'='already_completed' and public.yz101_lesson_state()->>'lesson_points'='100','Repeat earns no more points';
  r:=public.yz101_lesson_test('P02',array[0,0,0],null,gen_random_uuid());assert r->>'status'='cooldown','One success per24h';
  -- Premium bypasses learning cooldown. Preserve original value on rollback.
  insert into yz101.users(id,is_premium) values(u,true) on conflict(id) do update set is_premium=true;
@@ -58,10 +61,13 @@ begin
  r:=public.yz101_ai_evaluation_control('reserve',u,'P15',repeat('d',64));
  assert r->>'status'='completed','Successful cache reused';
  assert (select ai_passed from yz101.pilot_progress where user_id=u and task_id='P15'),'Cached success repairs progress';
+ assert public.yz101_lesson_state()->>'lesson_points'='1500','15 lessons earn exactly 1500';
+ assert (select count(*) from yz101.scores where user_id=u and pilot_task_id is not null)=15,'Unique awards';
+ assert not has_table_privilege('authenticated','yz101.scores','INSERT'),'Awards protected';
  assert not has_table_privilege('authenticated','yz101.lesson_access','UPDATE'),'Counter protected';
  assert not has_table_privilege('authenticated','yz101.users','UPDATE'),'Premium protected';
  assert not has_function_privilege('anon','public.yz101_lesson_test(text,integer[],numeric,uuid)','EXECUTE'),'Auth required';
  assert not has_function_privilege('authenticated','public.yz101_ai_evaluation_control(text,uuid,text,text,uuid,jsonb)','EXECUTE'),'Grader service only';
 end $$;
 rollback;
-select 'PASS: sequence, AI prerequisite, shared attempts, 24h expiry, idempotency, premium, 45 answers, 4 numeric exercises, privileges' as result;
+select 'PASS: sequence, AI prerequisite, shared attempts, 24h expiry, idempotency, premium, 45 answers, 4 numeric exercises, privileges, points and duplicate prevention' as result;

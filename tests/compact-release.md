@@ -13,3 +13,9 @@ Validation:
 - Zero paid provider requests in this revision.
 
 The prior `pilot-navigation.mjs` and `pilot-api.py` describe the retired pilot UI/API and are superseded for this release by the checks above.
+
+## Lesson points — 2026-11-17
+
+Each fully completed lesson earns 100 points once in the server-owned score ledger. A unique user/lesson index prevents repeat awards. Completion and award commit in the same transaction. Existing completions are backfilled; existing accounts, progress and cooldowns are unchanged. Lesson points appear on the home screen and +100 in the successful result dialog. Legacy score entries remain untouched.
+
+Extended SQL tests passed: failure earns zero, success after retry earns 100, repeated completion earns no more, and 15 completed lessons earn exactly 1500. DOM tests passed for the reward dialog and total after session reload. No provider calls. Live browser tool remains unavailable.
