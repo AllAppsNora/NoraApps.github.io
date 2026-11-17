@@ -1,5 +1,5 @@
 import { synthesizeWaveNet } from '../_shared/wavenet.mjs';
-import { MENTOR_SYSTEM, validExplanation, parseMentorInput } from './policy.mjs';
+import { MENTOR_SYSTEM, validExplanation, parseMentorInput, plainExplanation } from './policy.mjs';
 const base=Deno.env.get('SUPABASE_URL')!,service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const headers={'Access-Control-Allow-Origin':'https://noraapps.web.app','Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS','Cache-Control':'no-store','Vary':'Origin'};
 const reply=(data:unknown,status=200)=>Response.json(data,{status,headers});
@@ -41,16 +41,16 @@ Deno.serve(async req=>{
   const context=await control('context',user,{p_task:data.task_id});
   if(context.status!=='ready')return reply(context);
   const prompt=JSON.stringify({lesson:context.rubric,previous_feedback:context.feedback,student_answer:data.answer,student_question:data.message||'Yanıtımdaki en önemli eksikliği anlamama yardım et.'});
-  const cache=await hash('mentor-v1\n'+prompt);
+  const cache=await hash('mentor-v3\n'+prompt);
   const claim=await control('reserve',user,{p_task:data.task_id,p_hash:cache});
   if(claim.status==='cached')return reply({status:'ready',id:claim.id,text:claim.text});
   if(claim.status!=='reserved')return reply(claim);
   let usage={input_tokens:0,output_tokens:0};
   try{
-   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:AbortSignal.timeout(25000),headers:{'x-api-key':key,'anthropic-version':'2023-06-01','Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:600,temperature:0.3,system:MENTOR_SYSTEM,messages:[{role:'user',content:prompt}]})});
+   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal:AbortSignal.timeout(25000),headers:{'x-api-key':key,'anthropic-version':'2023-06-01','Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:600,temperature:0,system:MENTOR_SYSTEM,messages:[{role:'user',content:prompt}]})});
    if(!r.ok)throw Error('provider_failed');
    const result=await r.json();usage=result.usage||usage;
-   const text=(result.content||[]).filter((x:any)=>x.type==='text').map((x:any)=>x.text).join('').trim();
+   const text=plainExplanation((result.content||[]).filter((x:any)=>x.type==='text').map((x:any)=>x.text).join(''));
    if(!validExplanation(text,result.stop_reason))throw Error('incomplete_explanation');
    await control('finish',user,{p_id:claim.id,p_payload:{ok:true,text,...usage}});
    return reply({status:'ready',id:claim.id,text});
