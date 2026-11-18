@@ -1,6 +1,6 @@
 // Server-only transport. Call only after premium/ownership checks and a cache miss.
 // Never accept provider credentials or voice configuration from browser requests.
-export const WAVENET_VOICE = 'tr-TR-Wavenet-A';
+export const WAVENET_VOICE = 'tr-TR-Chirp3-HD-Achernar';
 export const MAX_SPEECH_CHARACTERS = 600;
 const ENDPOINT = 'https://texttospeech.googleapis.com/v1/text:synthesize';
 
@@ -18,7 +18,7 @@ export function speechRequest(text) {
   return {
     input: { text: normalized },
     voice: { languageCode: 'tr-TR', name: WAVENET_VOICE },
-    audioConfig: { audioEncoding: 'MP3', speakingRate: 1, pitch: 0 },
+    audioConfig: { audioEncoding: 'MP3' },
   };
 }
 
@@ -34,7 +34,7 @@ export async function synthesizeWaveNet(text, { apiKey, fetchImpl = fetch } = {}
   let response;
   try {
     response = await fetchImpl(ENDPOINT, {
-      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(15000),
+      method: 'POST', redirect: 'error', signal: AbortSignal.timeout(25000),
       headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey },
       body: JSON.stringify(payload),
     });

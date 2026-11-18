@@ -12,15 +12,15 @@ test('missing configuration makes no paid request', async () => {
   await assert.rejects(synthesizeWaveNet('Merhaba.', { fetchImpl: () => { calls++; } }), /not_configured/);
   assert.equal(calls, 0);
 });
-test('sends Turkish WaveNet, keeps key out of URL, returns MP3', async () => {
+test('sends Turkish Chirp 3 HD, keeps key out of URL, returns MP3', async () => {
   const audio = Buffer.from('ID3abcdefghijklmnop');
   const result = await synthesizeWaveNet('Birlikte düşünelim.', { apiKey: 'test-only', fetchImpl: async (url, init) => {
     assert.equal(url, 'https://texttospeech.googleapis.com/v1/text:synthesize');
     assert.equal(init.headers['X-Goog-Api-Key'], 'test-only');
     assert.equal(init.redirect, 'error');
     const body = JSON.parse(init.body);
-    assert.equal(body.voice.name, 'tr-TR-Wavenet-A');
-    assert.equal(body.audioConfig.audioEncoding, 'MP3');
+    assert.equal(body.voice.name, 'tr-TR-Chirp3-HD-Achernar');
+    assert.deepEqual(body.audioConfig, {audioEncoding: 'MP3'});
     return Response.json({ audioContent: audio.toString('base64') });
   }});
   assert.deepEqual(Buffer.from(result.bytes), audio);

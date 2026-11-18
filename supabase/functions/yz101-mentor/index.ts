@@ -41,7 +41,7 @@ Deno.serve(async req=>{
   const context=await control('context',user,{p_task:data.task_id});
   if(context.status!=='ready')return reply(context);
   const prompt=JSON.stringify({lesson:context.rubric,previous_feedback:context.feedback,student_answer:data.answer,student_question:data.message||'Yanıtımdaki en önemli eksikliği anlamama yardım et.'});
-  const cache=await hash('mentor-v3\n'+prompt);
+  const cache=await hash('mentor-v5-chirp3\n'+prompt);
   const claim=await control('reserve',user,{p_task:data.task_id,p_hash:cache});
   if(claim.status==='cached')return reply({status:'ready',id:claim.id,text:claim.text});
   if(claim.status!=='reserved')return reply(claim);
