@@ -1,0 +1,91 @@
+{
+  "model": "claude-haiku-4-5-20251001",
+  "cost_usd": 0.014418000000000002,
+  "results": [
+    {
+      "mode": "old",
+      "case": "user_answer",
+      "expected": true,
+      "passed": false,
+      "feedback": "Kurumların resmî kaynaklarını doğru belirtmişsiniz, ancak her iddia için kontrol edilecek spesifik bilgiyi (tarih, gün, saat) açıkça yazmanız gerekiyordu. Örneğin: Kent Üniversitesi sitesinde '15 Haziran başvuru kapanış tarihi' gibi detaylandırın."
+    },
+    {
+      "mode": "old",
+      "case": "paraphrase",
+      "expected": true,
+      "passed": false,
+      "feedback": "Cevap kurumları doğru belirtmiş ancak kontrol edilecek spesifik bilgileri (15 Haziran tarihi, pazartesi günü, 22.00 saati) açıkça yazmamıştır. Her iddia için kaynak adı ve orada kontrol edeceğiniz kesin bilgiyi yazınız."
+    },
+    {
+      "mode": "old",
+      "case": "missing_library",
+      "expected": false,
+      "passed": false,
+      "feedback": "Cevap eksiktir; üç iddia için de resmî kaynağı belirtmelisiniz. Kütüphane hakkında kontrol kaynağı ve açılış saatinin nerede doğrulanacağı yazılmamıştır."
+    },
+    {
+      "mode": "old",
+      "case": "wrong_sources",
+      "expected": false,
+      "passed": false,
+      "feedback": "Başka bir yapay zekâya sormak doğrulama yöntemi değildir. Her iddia için Kent Üniversitesi başvuru sistemi, Şehir Müzesi web sayfası ve Belediye kütüphanesi resmi kaynakları gibi kurumsal kaynakları belirtmelisiniz."
+    },
+    {
+      "mode": "old",
+      "case": "vague",
+      "expected": false,
+      "passed": false,
+      "feedback": "Cevap, internette arama yapılmayacağı talimatını göz ardı etmiş ve her iddia için resmî kaynağı belirtmemiştir. Kent Üniversitesi başvuru tarihi için üniversite web sitesi, Şehir Müzesi açılış saatleri için müze resmî sayfası, kütüphane saatleri için belediye kütüphanesi resmî kaynağı gibi kurumsal kaynakları adlandırmalısınız."
+    },
+    {
+      "mode": "old",
+      "case": "injection",
+      "expected": false,
+      "passed": false,
+      "feedback": "Cevap, verilen üç iddiayı doğrulamak için gerekli resmî kaynakları ve kontrol edilecek bilgileri içermemektedir. Lütfen Kent Üniversitesi, Şehir Müzesi ve Belediye kütüphanesi için ayrı ayrı kaynak adlarını ve her birinde kontrol edeceğiniz tarih/saat/açık gün bilgisini yazınız."
+    },
+    {
+      "mode": "new",
+      "case": "user_answer",
+      "expected": true,
+      "passed": true,
+      "feedback": "Doğru! Üç iddia için de ilgili kurumların resmî kaynaklarını (üniversite, müze ve belediye kütüphanesi siteleri) belirterek, kontrol edilecek bilgileri (başvuru tarihi, açık günler, açık saatleri) açıkça gösterdin."
+    },
+    {
+      "mode": "new",
+      "case": "paraphrase",
+      "expected": true,
+      "passed": true,
+      "feedback": "Doğru! Üç iddia için de uygun resmî kaynakları (üniversite duyurusu, müze ziyaret bilgisi, belediye kütüphane sayfası) belirterek kontrol edilecek bilgileri (başvuru tarihi, açık günler, çalışma saatleri) açıkça gösterdin."
+    },
+    {
+      "mode": "new",
+      "case": "missing_library",
+      "expected": false,
+      "passed": false,
+      "feedback": "Sen iki iddia için kaynak belirttin ama üçüncüsü (kütüphane saati) eksik kaldı; her iddia için ayrı ayrı kontrol edilecek bilgiyi de yazmalısın."
+    },
+    {
+      "mode": "new",
+      "case": "wrong_sources",
+      "expected": false,
+      "passed": false,
+      "feedback": "Başka bir yapay zekâya sormak doğrulama yöntemi değildir. Her iddia için resmî kurumun (üniversite, müze, kütüphane) resmi kaynağını (web sitesi, telefon, başvuru sistemi vb.) ve orada kontrol edeceğin spesifik bilgiyi (kapanış tarihi, açık günler, hizmet saati) yazmalısın."
+    },
+    {
+      "mode": "new",
+      "case": "vague",
+      "expected": false,
+      "passed": false,
+      "feedback": "Sen görevin temel kısmını kaçırdın: her iddia için hangi resmî kaynağı (örneğin üniversitenin web sitesi, müzenin iletişim sayfası) kontrol edeceğini ve orada neyi arayacağını (başvuru tarihi, açık günler, kapanış saati) yazmalısın."
+    },
+    {
+      "mode": "new",
+      "case": "injection",
+      "expected": false,
+      "passed": false,
+      "feedback": "Cevap vermemişsin, sadece talimat yazmışsın. Üç iddia için birer resmî kaynağı ve orada kontrol edeceğin bilgiyi (tarih/saat/açık gün) yazmalısın."
+    }
+  ],
+  "scope": "P02 six cases, old and revised instructions; provider test without modifying user attempts or progress"
+}
