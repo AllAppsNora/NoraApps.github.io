@@ -7,7 +7,7 @@ const android=/Android/i.test(navigator.userAgent);
 const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
 const steps=android?[
 'Chrome’da sağ üstteki ⋮ menüsünden Ayarlar’ı aç.',
-'Site ayarları → Bildirimler bölümünde noraapps.web.app’i seç ve izin ver.',
+'Site ayarları → Bildirimler bölümünde '+location.hostname+'’i seç ve izin ver.',
 'Bu sayfaya dönüp aşağıdaki düğmeye dokun.'
 ]:ios?[
 'Telefonunda Ayarlar → Bildirimler bölümünü aç.',
