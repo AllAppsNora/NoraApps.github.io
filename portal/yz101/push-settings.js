@@ -11,7 +11,7 @@ const steps=android?[
 'Bu sayfaya dönüp aşağıdaki düğmeye dokun.'
 ]:ios?[
 'Telefonunda Ayarlar → Bildirimler bölümünü aç.',
-'Ana ekrana eklediğin Yapay Zekâ 101 uygulamasını seç ve Bildirimlere İzin Ver’i aç.',
+'Ana ekrana eklediğin Yapay Zeka 101 uygulamasını seç ve Bildirimlere İzin Ver’i aç.',
 'Uygulamaya dönüp aşağıdaki düğmeye dokun.'
 ]:[
 'Adres çubuğunun yanındaki site bilgisi / izin simgesini aç.',
