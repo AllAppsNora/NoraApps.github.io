@@ -33,15 +33,23 @@ let deferredInstall=null;
 const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const shareIcon='<svg class="share-ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function installBody(){
+ if(isIOS())return '<ol class="install-steps"><li>Safari\'de alttaki '+shareIcon+' <b>Paylaş</b> düğmesine dokun.</li><li>Listeyi kaydırıp <b>Ana Ekrana Ekle</b>\'yi seç.</li><li><b>Ekle</b>\'ye dokun. Uygulama ana ekranında açılır; bildirimler de bundan sonra çalışır.</li></ol><p class="muted install-note">Chrome yerine Safari ile açman gerekir.</p>';
+ if(deferredInstall)return '<button type="button" class="primary wide" data-action="install">Uygulamayı yükle</button>';
+ return '<p class="muted">Tarayıcı menüsünden (⋮) <b>Uygulamayı yükle</b> ya da <b>Ana ekrana ekle</b>\'yi seç.</p>';
+}
 function installCard(dismissible){
  if(isStandalone())return '';
  try{if(dismissible&&localStorage.getItem('yz101_install_off'))return '';}catch{}
  const close=dismissible?'<button type="button" class="text install-close" data-action="install-off" aria-label="Kapat">Şimdi değil</button>':'';
- let inner;
- if(isIOS())inner='<ol class="install-steps"><li>Safari\'de alttaki '+shareIcon+' <b>Paylaş</b> düğmesine dokun.</li><li>Listeyi kaydırıp <b>Ana Ekrana Ekle</b>\'yi seç.</li><li><b>Ekle</b>\'ye dokun. Uygulama ana ekranında açılır; bildirimler de bundan sonra çalışır.</li></ol><p class="muted install-note">Chrome yerine Safari ile açman gerekir.</p>';
- else if(deferredInstall)inner='<button type="button" class="primary wide" data-action="install">Uygulamayı yükle</button>';
- else inner='<p class="muted">Tarayıcı menüsünden (⋮) <b>Uygulamayı yükle</b> ya da <b>Ana ekrana ekle</b>\'yi seç.</p>';
- return '<section class="card install-card" id="install-card"><strong>Ana ekranına ekle</strong><p class="muted">Tek dokunuşla aç, günlük ders bildirimini al.</p>'+inner+close+'</section>';
+ return '<section class="card install-card" id="install-card"><strong>Ana ekranına ekle</strong><p class="muted">Tek dokunuşla aç, günlük ders bildirimini al.</p>'+installBody()+close+'</section>';
+}
+let setupStep='install';
+function renderSetup(){
+ updateChrome();
+ if(setupStep==='install'&&isStandalone())setupStep='notify';
+ if(setupStep==='install'){root.innerHTML='<section class="card auth setup" id="install-card"><span class="eyebrow">Kurulum · 1/2</span><h1>Uygulamayı ana ekranına ekle</h1><p class="muted">Uygulama gibi açılır. Bildirimler de böyle çalışır.</p>'+installBody()+'<button class="primary wide actions" data-action="setup-next">Devam et</button><button class="text" data-action="setup-next">Şimdi değil</button></section>';}
+ else{const iosWeb=isIOS()&&!isStandalone();root.innerHTML='<section class="card auth setup"><span class="eyebrow">Kurulum · 2/2</span><h1>Dersin hazır olunca haber verelim</h1><p class="muted">Günde bir hatırlatma. İstediğin zaman kapatabilirsin.</p>'+(iosWeb?'<p class="muted install-note">iPhone\'da bildirimler için önce uygulamayı ana ekrana ekle, sonra Hesap sayfasından aç.</p>':'<a class="button primary wide" href="bildirimler.html?start=1">Bildirimleri aç</a>')+'<button class="'+(iosWeb?'primary wide actions':'text')+'" data-action="setup-done">'+(iosWeb?'Derslere başla':'Şimdi değil')+'</button></section>';}
 }
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;const c=document.getElementById('install-card');if(c){const t=document.createElement('div');t.innerHTML=installCard(!!c.querySelector('.install-close'));c.replaceWith(t.firstChild);}});
 window.addEventListener('appinstalled',()=>{deferredInstall=null;document.getElementById('install-card')?.remove();});
@@ -88,6 +96,7 @@ function render(){
  clearInterval(countdownTimer);updateChrome();
  if(recovery){resetScreen();return;}if(!session){auth();return;}if(!state){root.innerHTML='<section class="card"><p>Bilgilerin yükleniyor…</p></section>';return;}if(!state.profile){if(page==='exam'&&exam?.kind==='placement'){renderExam();return;}onboarding();return;}
  syncNavigation();
+ if(page==='setup'){renderSetup();return;}
  if(page==='placement-result'){renderPlacementResult();return;}
  if(page==='exam'){renderExam();return;}if(page==='module'){renderModule();return;}if(page==='article'){renderArticle();return;}
  const u=state.profile,progress=new Set(state.progress.map(x=>x.module_id)),current=state.modules.filter(x=>x.level===courseLevel()),next=state.modules.find(x=>!progress.has(x.id));
@@ -159,6 +168,8 @@ root.addEventListener('click',event=>{const b=event.target.closest('button');if(
   if(a==='refresh-news'){await reload();return;}
   if(a==='read-today'){const n=state.news[0];if(!n)return;await api('read_news',{id:n.id});page='news';await reload();window.scrollTo({top:0,left:0,behavior:'instant'});return;}
   if(a==='install'){if(deferredInstall){deferredInstall.prompt();try{await deferredInstall.userChoice;}catch{}deferredInstall=null;document.getElementById('install-card')?.remove();}return;}
+  if(a==='setup-next'){setupStep='notify';renderSetup();window.scrollTo(0,0);return;}
+  if(a==='setup-done'){page='home';await reload();window.scrollTo(0,0);return;}
   if(a==='install-off'){try{localStorage.setItem('yz101_install_off','1');}catch{}document.getElementById('install-card')?.remove();return;}
   if(a==='sample'){page='sample';updateChrome();window.mountYZ101Start(root,{onBack:()=>auth('welcome'),onSignup:()=>auth('signup'),onLogin:()=>auth('login')});window.scrollTo(0,0);return;}
   if(['login','signup','forgot'].includes(a)){auth(a);return;}
@@ -193,7 +204,7 @@ root.addEventListener('submit',event=>{if(event.target.closest('[data-lesson-vie
    await detachPush();await client.auth.signOut({scope:'local'});session=null;state=null;recovery=false;history.replaceState(null,'',location.pathname);auth('login','Şifren güncellendi. Yeni şifrenle giriş yapabilirsin.');
   }else if(form.id==='enroll-form'){
    if(submitter?.value==='test'){exam={...await api('start_placement'),kind:'placement',profile:values};page='exam';updateChrome();renderExam();window.scrollTo(0,0);}
-   else{await api('enroll',values);page='home';await reload();notify('Profilin hazır.');}
+   else{await api('enroll',values);await loadState();page='setup';setupStep='install';render();window.scrollTo(0,0);}
   }else if(form.id==='exam-form'){
    if(exam.kind==='placement'){await api('enroll',{...exam.profile,exam_id:exam.exam_id,answers:values});page='placement-result';await reload();window.scrollTo(0,0);}
    else{const r=await api('submit_level',{exam_id:exam.exam_id,answers:values});page='home';await reload();showResultDialog(r.passed?'Tebrikler!':'Henüz geçemedin',`${r.correct}/${r.total} doğru. ${r.passed?(reachedGoal(state.profile)?'Hedefine ulaştın!':`Yeni seviyen: ${levelName(r.level)}`):'Sınavı yeniden deneyebilirsin.'}`,r.passed?'Devam et':'Tamam');}

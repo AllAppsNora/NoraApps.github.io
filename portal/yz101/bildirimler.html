@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#FFFAF0"><title>YZ101 · Bildirimler</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="style.css?v=20261113-push-switch"><style>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#FFFAF0"><title>60 Günde Yapay Zeka · Bildirimler</title><link rel="icon" href="logo.png"><link rel="stylesheet" href="style.css?v=20261113-push-switch"><style>
 .notification-intro{font-size:15px;max-width:44ch;margin-bottom:16px}
 .notification-settings{margin-top:8px}
 .notification-state,.notification-time{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;border-bottom:1px solid var(--border)}
@@ -26,7 +26,7 @@
 .notification-toggle[aria-checked="true"] .switch-track:after{transform:translateX(18px)}
 .notification-toggle:focus-visible{outline:2px solid #FFC83D;outline-offset:4px;border-radius:8px}
 .notification-toggle:disabled{opacity:.6;cursor:wait}
-</style></head><body data-page="notifications"><header><a href="./" class="brand" aria-label="YZ101 ana sayfa"><img src="logo.png" alt=""><span>Yapay Zeka <b>101</b></span></a></header>
+</style></head><body data-page="notifications"><header><a href="./" class="brand" aria-label="60 Günde Yapay Zeka ana sayfa"><img src="logo.png?v=3" alt=""><span>60 Günde <b>Yapay Zeka</b></span></a></header>
 <main><h1>Bildirimler</h1><p class="muted notification-intro">Dersin veya haberin hazır olduğunda hatırlatalım.</p>
 <section id="controls" class="notification-settings" hidden>
 <div class="notification-state"><strong>Hatırlatmalar</strong><button id="toggle" class="notification-toggle" type="button" role="switch" aria-checked="false" aria-label="Hatırlatmalar"><span id="status">Kontrol ediliyor…</span><span class="switch-track" aria-hidden="true"></span></button></div>
@@ -34,4 +34,4 @@
 <label class="notification-time"><span>Hatırlatma saati</span><input id="time" type="time" min="10:00" max="21:55" step="300" value="21:00" required></label>
 <button class="secondary" id="save" hidden>Saati kaydet</button>
 </section><p class="notification-message muted" id="message" role="status" aria-live="polite"></p>
-</main><script src="supabase.min.js"></script><script>window.PUSH_CONFIG={"url":"https://gjztdlihsfmozxcgdwke.supabase.co","key":"sb_publishable_tDQAKMpHaorQAplXqg5Nqg_zwOImZeT","storageKey":"nora-yz101-auth","sessionStorage":false,"worker":"push-worker.js","scope":"./"};</script><script src="push-settings.js?v=20261120-relative-scope"></script></body></html>
+<p><a class="button primary wide" id="back-start" href="./" style="background:#FFC83D;color:#2B2118" hidden>Derslere dön</a></p><script>if(/[?&]start=1/.test(location.search))document.getElementById("back-start").hidden=false;</script></main><script src="supabase.min.js"></script><script>window.PUSH_CONFIG={"url":"https://gjztdlihsfmozxcgdwke.supabase.co","key":"sb_publishable_tDQAKMpHaorQAplXqg5Nqg_zwOImZeT","storageKey":"nora-yz101-auth","sessionStorage":false,"worker":"push-worker.js","scope":"./"};</script><script src="push-settings.js?v=20261120-relative-scope"></script></body></html>
