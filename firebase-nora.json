@@ -19,6 +19,31 @@
       ]
     },
     {
+      "site": "yz101app",
+      "public": "portal/yz101",
+      "ignore": [
+        "**/.*"
+      ],
+      "redirects": [
+        {
+          "source": "/yz101/**",
+          "destination": "/",
+          "type": 302
+        }
+      ],
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "site": "noword",
       "public": "noword-source",
       "ignore": [
