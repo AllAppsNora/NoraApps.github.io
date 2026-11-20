@@ -4,7 +4,7 @@ window.mountYZ101Start=function(root,opts){
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const quiz=[
   {q:'E-posta yanıtı yazdırdın, sonuç çok genel çıktı. Ne yaparsın?',o:['Aynı isteği daha uzun yazıp tekrar gönderirim.','Başka bir sohbet botunu denerim.','Alıcıyı, tonu ve istediğim sonucu yazarım.'],c:2,tip:'Komutu net yaz: ne istediğini, kimin için olduğunu ve uzunluğunu söyle.'},
-  {q:'Yapay zeka bir tarihi yanlış verdi. Neden olabilir?',o:['Doğru görünen ama yanlış bilgi de üretebilir.','Soruyu kısa yazmışımdır, o yüzden hep yanlış çıkar.','Cevabı canlı arar, bağlantı kopmuştur.'],c:0,tip:'Yapay zeka bazen doğru görünen ama yanlış bilgi üretir. Önemli bilgiyi kontrol et.'},
+  {q:'Yapay zeka bir tarihi yanlış verdi. Neden olabilir?',o:['Doğru görünen ama yanlış bilgi de üretebilir.','Soruyu kısa yazdığım için cevap her zaman yanlış çıkar.','Cevabı internetten kopyalar, kaynak sitesi yanlıştır.'],c:0,tip:'Yapay zeka bazen doğru görünen ama yanlış bilgi üretir. Önemli bilgiyi kontrol et.'},
   {q:'Her pazartesi aynı raporu ekibine göndermek istiyorsun. Hangisi daha iyi?',o:['Her hafta yapay zekaya yazdırıp elle gönderirim.','Raporu bir kez yazıp her hafta aynen kopyalarım.','Gönderimi otomasyona bağlar, metni yapay zekaya yazdırırım.'],c:2,tip:'Sabit adımları otomasyon yapar, metni yapay zeka yazar. İkisi birlikte çalışır.'},
   {q:'Bir uygulama yapay zeka servisini kendi içinden nasıl kullanır?',o:['Servisin sohbet ekranını açar.','API üzerinden servise istek gönderir.','Servisin mobil uygulamasını kurar.'],c:1,tip:'API, bir yazılımın yapay zeka servisine istek göndermesini sağlar.'}
  ];
