@@ -115,3 +115,5 @@ button.text{color:var(--brand-ink)}
 .install-pop{border:0;border-radius:24px 24px 0 0;padding:0;width:100%;max-width:480px;margin:auto auto 0;box-shadow:0 -8px 32px #0003;background:#fff}.install-pop::backdrop{background:#2B211899}.install-pop-body{padding:24px 20px 20px}.install-pop h2{margin:0 0 6px;font-size:20px}.install-pop p{margin:0 0 12px;font-size:14px}.install-pop .text{display:block;margin:8px auto 0}
 
 .goal-choice.in{background:var(--brand-soft);border-color:var(--brand)}
+
+.lesson.soon{opacity:.6}.lesson.soon .num{color:var(--muted)}
