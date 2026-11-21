@@ -92,7 +92,7 @@ window.addEventListener('popstate',event=>{
 function updateChrome(){
  document.body.dataset.page=page;
  const profile=document.querySelector('#header-profile');
- if(profile){profile.hidden=!session||!state?.profile;profile.innerHTML=mascot(avatarId());}
+ if(profile){profile.hidden=!session||!state?.profile||page==='profile';profile.innerHTML=mascot(avatarId());}
 }
 document.querySelector('#header-profile')?.addEventListener('click',()=>{if(!state?.profile||lessonView.busy())return;lessonView.keepDraft();page='profile';render();window.scrollTo(0,0);});
 const back=()=>'';
@@ -176,7 +176,7 @@ root.addEventListener('click',event=>{const b=event.target.closest('button');if(
   if(b.dataset.mascot){if(!mascots[b.dataset.mascot])return;const {data,error}=await client.auth.updateUser({data:{yz101_mascot:b.dataset.mascot}});if(error)throw error;session={...session,user:data.user};render();notify('Maskotun kaydedildi.');return;}
   if(b.dataset.level){if(!courseGroups.includes(b.dataset.level))return;selectedLevel=b.dataset.level;page='lessons';render();window.scrollTo(0,0);return;}
   if(b.dataset.page){lessonView.keepDraft();page=b.dataset.page;render();window.scrollTo({top:0,left:0,behavior:'instant'});return;}
-  if(b.dataset.module){const index=LESSONS.findIndex(l=>l.id===b.dataset.module);if(index<0){if(COURSE.some(c=>c.id===b.dataset.module))notify('Bu ders hazırlanıyor. Çok yakında burada olacak.');return;}lesson={id:b.dataset.module,index};selectedLevel=LESSONS[index].level;page='module';render();window.scrollTo(0,0);return;}
+  if(b.dataset.module){const index=LESSONS.findIndex(l=>l.id===b.dataset.module);if(index<0){if(COURSE.some(c=>c.id===b.dataset.module))notify('Bu seviyeye henüz gelmedin. Önceki dersleri tamamladıkça yeni dersler açılır.');return;}lesson={id:b.dataset.module,index};selectedLevel=LESSONS[index].level;page='module';render();window.scrollTo(0,0);return;}
   if(b.dataset.news){reading=state.news.find(n=>n.id===b.dataset.news);page='article';render();window.scrollTo(0,0);return;}
   if(b.dataset.ranking){await loadRanking(b.dataset.ranking);return;}
   const a=b.dataset.action;
@@ -245,3 +245,6 @@ init().catch(e=>{root.innerHTML='<section class="card auth"><h1>Bağlantı kurul
 
 
 try{const clr=()=>{if(document.visibilityState==='visible'&&navigator.clearAppBadge)navigator.clearAppBadge().catch(()=>{});};document.addEventListener('visibilitychange',clr);clr();}catch{}
+
+// Close any open dialog when the area outside it is clicked.
+document.addEventListener('click',e=>{const d=e.target;if(!(d instanceof HTMLDialogElement)||!d.open)return;const r=d.getBoundingClientRect();if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)return;const ev=new Event('cancel',{cancelable:true});d.dispatchEvent(ev);if(d.open&&!ev.defaultPrevented)d.close();});
